@@ -25,3 +25,47 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Coverage directory
+coverage/
+
+# Misc
+*.local
+*.cache
+*.tgz
+
+# Expo/React Native
+.expo/
+.expo-shared/
+
+# Capacitor
+android/
+ios/
+web/
+
+# Firebase local emulators
+.firebase/
+
+# Backups y temporales
+*.bak
+*.tmp
+
+# Test output
+*.test-results
+
+# Lockfiles opcionales
+# package-lock.json
+yarn.lock
+pnpm-lock.yaml
