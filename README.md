@@ -138,3 +138,4 @@ Si quieres empaquetar la aplicación como app móvil (Android/iOS) usando Capaci
 ## Licencia
 
 MIT
+<!-- Autor: Martín -->
