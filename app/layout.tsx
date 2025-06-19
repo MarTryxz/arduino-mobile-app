@@ -21,15 +21,6 @@ export default function RootLayout({
           <meta name="theme-color" content="#007bff" />
         </head>
         <body>
-          <header style={{ padding: '1rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem' }}>
-            <SignedOut>
-              <SignInButton mode="modal" />
-              <SignUpButton mode="modal" />
-            </SignedOut>
-            <SignedIn>
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
-          </header>
           {children}
         </body>
       </html>

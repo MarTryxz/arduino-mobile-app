@@ -5,8 +5,10 @@ import Link from "next/link"
 import { Thermometer, Droplet, Wifi, Bluetooth, Bell, History, Info, Menu, Home, Battery } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Progress } from "@/components/ui/progress"
+import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
+
 
 export default function DashboardPage() {
   const [temperature, setTemperature] = useState(24.5)
@@ -30,20 +32,33 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-app-blue text-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-3 flex">
           <h1 className="text-xl font-bold">Mi Dispositivo</h1>
+          <div className="ml-auto flex items-center gap-2">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="text-white">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
+            <div className="flex items-center gap-2">
+                <SignedOut>
+                  <SignInButton mode="modal" />
+                  <SignUpButton mode="modal" />
+                </SignedOut>
+                <SignedIn>
+                  <UserButton afterSignOutUrl="/" />
+                </SignedIn>
+              </div>
             <SheetContent>
-              <nav className="flex flex-col gap-4 mt-8">
-                <Link href="/dashboard" className="flex items-center gap-2 py-2 font-medium">
-                  <Home className="h-5 w-5" />
-                  Panel principal
-                </Link>
+  <SheetHeader>
+    <SheetTitle>Menú de navegación</SheetTitle>
+  </SheetHeader>
+  <nav className="flex flex-col gap-4 mt-8">
+    <Link href="/dashboard" className="flex items-center gap-2 py-2 font-medium">
+      <Home className="h-5 w-5" />
+      Panel principal
+    </Link>
                 <Link href="/history" className="flex items-center gap-2 py-2">
                   <History className="h-5 w-5" />
                   Historial
@@ -59,6 +74,7 @@ export default function DashboardPage() {
               </nav>
             </SheetContent>
           </Sheet>
+          </div>
         </div>
       </header>
 
