@@ -16,7 +16,7 @@ Este proyecto es una aplicación web progresiva (PWA) construida con Next.js 15,
 
 1. **Clona el repositorio:**
    ```bash
-   git clone <REPO_URL>
+   git clone https://github.com/MarTryxz/arduino-mobile-app.git
    cd arduino-mobile-app
    ```
 
