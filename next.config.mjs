@@ -9,6 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    // Add this to help with the workStore issue
+    serverComponentsExternalPackages: [],
+  },
 }
 
 export default nextConfig

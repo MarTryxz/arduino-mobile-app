@@ -12,12 +12,15 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#007bff" />
+        <meta name="theme-color" content="#1E3A8A" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </head>
-      <body>{children}</body>
+      <body className="antialiased">
+        {children}
+      </body>
     </html>
   )
 }
