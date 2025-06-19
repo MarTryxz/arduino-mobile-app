@@ -1,3 +1,7 @@
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const withPWA = require('@ducanh2912/next-pwa').default;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -10,9 +14,13 @@ const nextConfig = {
     unoptimized: true,
   },
   experimental: {
-    // Add this to help with the workStore issue
-    serverComponentsExternalPackages: [],
+    serverComponentsExternalPackages: ['@ducanh2912/next-pwa'],
   },
 }
 
-export default nextConfig
+export default withPWA({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+})(nextConfig);
