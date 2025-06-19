@@ -3,6 +3,7 @@
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { SignInButton, SignUpButton } from '@clerk/nextjs'
 
 export default function HomePage() {
   const { isLoaded, isSignedIn } = useUser()
@@ -30,19 +31,12 @@ export default function HomePage() {
       <div className="w-full max-w-sm space-y-8 rounded-lg bg-white p-8 shadow-md">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">Bienvenido a AquaGuard</h1>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-600 mb-4">
             Sistema de monitoreo de acuaponía basado en Arduino
           </p>
-        </div>
-        
-        <div className="mt-6 space-y-4">
-          <p className="text-center text-sm text-gray-600">
-            Por favor inicia sesión o regístrate para continuar
-          </p>
-          <div className="flex flex-col space-y-2">
-            <p className="text-center text-sm text-gray-500">
-              Usa los botones de la esquina superior derecha para autenticarte
-            </p>
+          <div className="flex justify-center gap-4">
+            <button className="button"> <SignUpButton mode="modal" /> </button>
+            <button className="button"> <SignInButton mode="modal" /> </button>
           </div>
         </div>
       </div>
