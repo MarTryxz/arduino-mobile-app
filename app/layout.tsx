@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { ClerkProvider } from '@clerk/nextjs'
+import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -12,12 +14,25 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#007bff" />
-      </head>
-      <body>{children}</body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <head>
+          <link rel="manifest" href="/manifest.json" />
+          <meta name="theme-color" content="#007bff" />
+        </head>
+        <body>
+          <header style={{ padding: '1rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem' }}>
+            <SignedOut>
+              <SignInButton mode="modal" />
+              <SignUpButton mode="modal" />
+            </SignedOut>
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+          </header>
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }
