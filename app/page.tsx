@@ -3,7 +3,7 @@
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { SignInButton, SignUpButton } from '@clerk/nextjs'
+import { SignInPersonalizado, SignUpPersonalizado } from '@/components/ui/sesion-button'
 
 export default function HomePage() {
   const { isLoaded, isSignedIn } = useUser()
@@ -35,8 +35,8 @@ export default function HomePage() {
             Sistema de monitoreo de acuaponía basado en Arduino
           </p>
           <div className="flex justify-center gap-4">
-            <button className="button"> <SignUpButton mode="modal" /> </button>
-            <button className="button"> <SignInButton mode="modal" /> </button>
+            <SignInPersonalizado/>
+            <SignUpPersonalizado/>
           </div>
         </div>
       </div>

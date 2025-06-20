@@ -76,7 +76,7 @@
 }
 
 /* From Uiverse.io by zanina-yassine */ 
-.button {
+.singButton {
   min-width: 120px;
 
   position: relative;
@@ -98,7 +98,7 @@
   transition: all 1s cubic-bezier(0.15, 0.83, 0.66, 1);
 }
 
-.button::before {
+.signButton::before {
   content: "";
   width: 70%;
   height: 1px;
