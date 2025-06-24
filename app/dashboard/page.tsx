@@ -50,7 +50,7 @@ export default function DashboardPage() {
                   <UserButton afterSignOutUrl="/" />
                 </SignedIn>
               </div>
-            <SheetContent>
+            <SheetContent title="Menu">
   <SheetHeader>
     <SheetTitle>Menú de navegación</SheetTitle>
   </SheetHeader>
