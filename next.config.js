@@ -5,5 +5,4 @@ const withPWA = require('next-pwa')({
 
 module.exports = withPWA({
   // Puedes agregar aquí otras configuraciones de Next.js
-  output: 'export',
 })
