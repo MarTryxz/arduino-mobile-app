@@ -61,6 +61,7 @@ export default function HomePage() {
           <div className="flex items-center space-x-3">
             <img src="/landing-page/logo aquaguard.png" alt="Logo AquaGuard" className="h-20 w-auto" />
             <h1 className="text-2xl font-bold text-blue-600">AquaGuard</h1>
+            <h4 className="text-lg font-semibold text-blue-600">Por OpenRakiduam</h4>
           </div>
           <nav className="space-x-4">
             <a href="#features" className="text-gray-600 hover:text-blue-500">Características</a>
