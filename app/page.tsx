@@ -20,9 +20,9 @@ export default function HomePage() {
 
   useEffect(() => {
     const images = [
-      '/landing-page/arduino.png',
-      '/landing-page/control.jpg',
-      '/landing-page/piscina.jpg',
+      '/landing-page/arduino.webp',
+      '/landing-page/control.webp',
+      '/landing-page/piscina.webp',
     ];
     let current = 0;
     function showImage(i: number) {
@@ -70,7 +70,7 @@ export default function HomePage() {
             </svg>
           </button>
           <div className="flex items-center space-x-3">
-            <img src="/landing-page/logo aquaguard.png" alt="Logo AquaGuard" className="h-20 w-auto" />
+            <img src="/landing-page/logo aquaguard.webp" alt="Logo AquaGuard" className="h-20 w-auto" />
             <h1 className="text-2xl font-bold text-blue-600">AquaGuard</h1>
             <h4 className="text-lg font-semibold text-blue-600">Por OpenRakiduam</h4>
           </div>
@@ -121,7 +121,7 @@ export default function HomePage() {
         <div className="h-80 sm:h-[24rem] md:h-[28rem] flex items-center justify-center">
           <img
             ref={carouselRef}
-            src="/landing-page/arduino.png"
+            src="/landing-page/arduino.webp"
             className="w-full h-full object-cover rounded-xl scale-95 transition-all duration-700"
             alt="Imagen carrusel"
           />
@@ -160,28 +160,28 @@ export default function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {/* Miembro 1 */}
             <div className="transform transition duration-500 hover:scale-105 hover:shadow-lg">
-              <img src="/landing-page/romo.jpg" alt="Miembro 1" className="w-full h-64 object-cover rounded-xl shadow-md" />
+              <img src="/landing-page/romo.webp" alt="Miembro 1" className="w-full h-64 object-cover rounded-xl shadow-md" />
               <p className="mt-2 text-blue-700 font-semibold">Martin Romo</p>
               <p className="mt-2 text-black-500 font-semibold">Backend</p>
             </div>
 
             {/* Miembro 2 */}
             <div className="transform transition duration-500 hover:scale-105 hover:shadow-lg">
-              <img src="/landing-page/nico.png" alt="Miembro 2" className="w-full h-64 object-cover rounded-xl shadow-md" />
+              <img src="/landing-page/nico.webp" alt="Miembro 2" className="w-full h-64 object-cover rounded-xl shadow-md" />
               <p className="mt-2 text-blue-700 font-semibold">Nicolás Guerra</p>
               <p className="mt-2 text-black-500 font-semibold">Frontend</p>
             </div>
 
             {/* Miembro 3 */}
             <div className="transform transition duration-500 hover:scale-105 hover:shadow-lg">
-              <img src="/landing-page/m.jpg" alt="Miembro 3" className="w-full h-64 object-cover rounded-xl shadow-md" />
+              <img src="/landing-page/m.webp" alt="Miembro 3" className="w-full h-64 object-cover rounded-xl shadow-md" />
               <p className="mt-2 text-blue-700 font-semibold">Matias Maldonado</p>
               <p className="mt-2 text-black-500 font-semibold">QA</p>
             </div>
 
             {/* Miembro 4 */}
             <div className="transform transition duration-500 hover:scale-105 hover:shadow-lg">
-              <img src="/landing-page/orellana.png" alt="Miembro 4" className="w-full h-64 object-cover rounded-xl shadow-md" />
+              <img src="/landing-page/orellana.webp" alt="Miembro 4" className="w-full h-64 object-cover rounded-xl shadow-md" />
               <p className="mt-2 text-blue-700 font-semibold">Martin Orellana</p>
               <p className="mt-2 text-black-500 font-semibold">Fullstack</p>
             </div>
