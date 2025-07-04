@@ -2,7 +2,7 @@
 
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { SignInPersonalizado, SignUpPersonalizado } from '@/components/ui/sesion-button'
 
 export default function HomePage() {
@@ -15,6 +15,7 @@ export default function HomePage() {
     }
   }, [isLoaded, isSignedIn, router])
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const carouselRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -57,19 +58,61 @@ export default function HomePage() {
     <div className="bg-blue-50 text-gray-800 min-h-screen">
       {/* HEADER */}
       <header className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center relative">
+          {/* Botón hamburguesa solo en móvil */}
+          <button
+            className="md:hidden absolute right-4 top-6 z-30 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Abrir menú"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
           <div className="flex items-center space-x-3">
             <img src="/landing-page/logo aquaguard.png" alt="Logo AquaGuard" className="h-20 w-auto" />
             <h1 className="text-2xl font-bold text-blue-600">AquaGuard</h1>
             <h4 className="text-lg font-semibold text-blue-600">Por OpenRakiduam</h4>
           </div>
-          <nav className="space-x-4">
+          {/* Navbar escritorio */}
+          <nav className="space-x-4 hidden md:flex">
             <a href="#features" className="text-gray-600 hover:text-blue-500">Características</a>
             <a href="#quienes-somos" className="text-gray-600 hover:text-blue-500">¿Quiénes somos?</a>
             <a href="#contacto" className="text-gray-600 hover:text-blue-500">Contacto</a>
-            <SignInPersonalizado/>
-            <SignUpPersonalizado/>
+            <SignInPersonalizado />
+            <SignUpPersonalizado />
           </nav>
+
+          {/* Sidebar móvil */}
+          {/* Fondo semitransparente */}
+          {sidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/40 z-20 md:hidden animate-fade-in"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+          <aside
+            className={
+              `fixed top-0 right-0 h-full w-2/3 max-w-xs bg-white shadow-lg z-30 flex flex-col items-start px-6 py-16 gap-4 transform transition-transform duration-300 md:hidden ` +
+              (sidebarOpen ? 'translate-x-0' : 'translate-x-full')
+            }
+            aria-label="Menú lateral"
+          >
+            <button
+              className="absolute top-4 right-4 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Cerrar menú"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <a href="#features" className="text-gray-600 hover:text-blue-500 py-2 w-full" onClick={() => setSidebarOpen(false)}>Características</a>
+            <a href="#quienes-somos" className="text-gray-600 hover:text-blue-500 py-2 w-full" onClick={() => setSidebarOpen(false)}>¿Quiénes somos?</a>
+            <a href="#contacto" className="text-gray-600 hover:text-blue-500 py-2 w-full" onClick={() => setSidebarOpen(false)}>Contacto</a>
+            <SignInPersonalizado />
+            <SignUpPersonalizado />
+          </aside>
         </div>
       </header>
 
