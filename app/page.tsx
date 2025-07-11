@@ -4,6 +4,11 @@ import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { SignInPersonalizado, SignUpPersonalizado } from '@/components/ui/sesion-button'
+export { default as Head } from "./page-head";
+
+import Head from './page-head';
+
+export const HeadComponent = Head;
 
 export default function HomePage() {
   const { isLoaded, isSignedIn } = useUser()
