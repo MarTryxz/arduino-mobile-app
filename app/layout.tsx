@@ -18,6 +18,7 @@ export default function RootLayout({
         <head>
           <link rel="manifest" href="/manifest.json" />
           <meta name="theme-color" content="#007bff" />
+          <link rel="icon" href="/openrakiduamlogo.webp" type="image/webp" />
         </head>
         <body>
           {children}
