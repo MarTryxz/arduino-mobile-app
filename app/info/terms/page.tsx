@@ -4,9 +4,7 @@ import Link from "next/link";
 import { Home, History, Bell, Info, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { SignedIn, SignedOut } from "@clerk/nextjs";
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton } from "@/components/ui/user-button";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export default function TermsPage() {
@@ -23,13 +21,7 @@ export default function TermsPage() {
                 </Button>
               </SheetTrigger>
               <div className="flex items-center gap-2">
-                <SignedOut>
-                  <SignInButton mode="modal" />
-                  <SignUpButton mode="modal" />
-                </SignedOut>
-                <SignedIn>
-                  <UserButton afterSignOutUrl="/" />
-                </SignedIn>
+                <UserButton />
               </div>
               <SheetContent title="Menu">
                 <SheetHeader>
