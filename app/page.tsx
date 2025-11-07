@@ -1,19 +1,19 @@
 "use client"
 
-import { useUser } from '@clerk/nextjs'
+import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { SignInPersonalizado, SignUpPersonalizado } from '@/components/ui/sesion-button'
 
 export default function HomePage() {
-  const { isLoaded, isSignedIn } = useUser()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
+    if (!loading && user) {
       router.push('/dashboard')
     }
-  }, [isLoaded, isSignedIn, router])
+  }, [loading, user, router])
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const carouselRef = useRef<HTMLImageElement>(null);
@@ -42,7 +42,7 @@ export default function HomePage() {
   }, []);
 
   // Mostrar loader mientras carga o si está autenticado (para evitar parpadeo de la landing)
-  if (!isLoaded || isSignedIn) {
+  if (loading || user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">

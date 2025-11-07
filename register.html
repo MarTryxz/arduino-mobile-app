@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AquaGuard - Crear cuenta</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes fade-in {
+      0% { opacity: 0; transform: translateY(-20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fade-in 0.6s ease-out forwards; }
+
+    /* Dark mode overrides */
+    body.dark-mode { color: #e5e7eb; background: linear-gradient(135deg, #0f172a 0%, #1f2937 100%); }
+    body.dark-mode .bg-white { background-color: #0b1220 !important; }
+    body.dark-mode .text-gray-800 { color: #f3f4f6 !important; }
+    body.dark-mode .text-gray-700 { color: #e5e7eb !important; }
+    body.dark-mode .text-gray-600 { color: #cbd5e1 !important; }
+    body.dark-mode .border-gray-300 { border-color: #334155 !important; }
+    body.dark-mode .text-blue-600 { color: #93c5fd !important; }
+    body.dark-mode .bg-blue-600 { background-color: #2563eb !important; }
+    body.dark-mode .hover\:bg-blue-700:hover { background-color: #1d4ed8 !important; }
+    body.dark-mode .shadow-xl { box-shadow: 0 10px 25px rgba(0,0,0,0.6) !important; }
+    body.dark-mode input { background-color: #0f172a; color: #e5e7eb; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center justify-center px-4">
+
+  <div class="fixed top-4 right-4 z-50">
+    <button id="btn-toggle-tema" class="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700" aria-label="Cambiar tema" title="Cambiar tema">
+      <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364l-1.414-1.414M8.05 8.05 6.636 6.636m10.728 0-1.414 1.414M8.05 15.95l-1.414 1.414"/>
+      </svg>
+      <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="max-w-md w-full">
+    <div class="text-center mb-8 animate-fade-in">
+      <div class="flex items-center justify-center space-x-3 mb-4">
+        <img src="logo aquaguard.png" alt="Logo AquaGuard" class="h-16 w-auto" />
+        <h1 class="text-3xl font-bold text-blue-600">AquaGuard</h1>
+      </div>
+      <p class="text-gray-600">Crea tu cuenta para monitorear tu piscina</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-xl p-8 animate-fade-in">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Crear cuenta</h2>
+      
+      <form id="register-form" class="space-y-5" method="POST" action="register.php" novalidate>
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
+          <input
+            type="text"
+            id="name"
+            name="nombre"
+
+            required
+            placeholder="Tu nombre"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+          />
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Correo electrónico</label>
+          <input
+            type="email"
+            id="email"
+            name="correo"
+
+            required
+            placeholder="correo@ejemplo.com"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+          />
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
+          <div class="relative">
+            <input
+              type="password"
+              id="password"
+              name="password"
+
+              required
+              minlength="8"
+              placeholder="Mínimo 8 caracteres"
+              class="w-full pr-12 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+            <button type="button" id="toggle-password" aria-label="Mostrar u ocultar contraseña" class="absolute inset-y-0 right-3 text-gray-500 hover:text-gray-700 focus:outline-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label for="confirm" class="block text-sm font-medium text-gray-700 mb-2">Confirmar contraseña</label>
+          <div class="relative">
+            <input
+              type="password"
+              id="confirm"
+              name="confirm"
+
+              required
+              minlength="8"
+              placeholder="Repite tu contraseña"
+              class="w-full pr-12 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+            <button type="button" id="toggle-confirm" aria-label="Mostrar u ocultar confirmación" class="absolute inset-y-0 right-3 text-gray-500 hover:text-gray-700 focus:outline-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-start">
+          <input id="terms" type="checkbox" class="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+          <label for="terms" class="ml-2 text-sm text-gray-600">
+            Acepto los términos y condiciones
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transform hover:scale-105 transition duration-200 shadow-lg hover:shadow-xl"
+        >
+          Crear cuenta
+        </button>
+
+        <p id="register-message" class="text-center text-sm hidden"></p>
+      </form>
+
+      <p class="text-center text-sm text-gray-600 mt-6">
+        ¿Ya tienes una cuenta?
+        <a href="login.html" class="text-blue-600 hover:text-blue-700 font-semibold">Inicia sesión</a>
+      </p>
+    </div>
+
+    <div class="text-center mt-6">
+      <a href="index.html" class="text-blue-600 hover:text-blue-700 font-medium flex items-center justify-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Volver al inicio
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const togglePassword = document.getElementById('toggle-password');
+    const toggleConfirm = document.getElementById('toggle-confirm');
+
+    function wireToggle(btnId, inputId) {
+      const btn = document.getElementById(btnId);
+      const input = document.getElementById(inputId);
+      if (!btn || !input) return;
+      btn.addEventListener('click', () => {
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        btn.setAttribute('aria-pressed', String(isHidden));
+      });
+    }
+
+    wireToggle('toggle-password', 'password');
+    wireToggle('toggle-confirm', 'confirm');
+
+    function setThemeIcon(isDark) {
+      const sun = document.getElementById('icon-sun');
+      const moon = document.getElementById('icon-moon');
+      if (!sun || !moon) return;
+      sun.classList.toggle('hidden', isDark);
+      moon.classList.toggle('hidden', !isDark);
+    }
+
+    (function initTheme() {
+      try {
+        const saved = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'dark' || (!saved && prefersDark)) {
+          document.body.classList.add('dark-mode');
+        }
+      } catch (_) {}
+      setThemeIcon(document.body.classList.contains('dark-mode'));
+    })();
+
+    const btnToggleTema = document.getElementById('btn-toggle-tema');
+    if (btnToggleTema) {
+      btnToggleTema.addEventListener('click', () => {
+        const isDark = document.body.classList.toggle('dark-mode');
+        setThemeIcon(isDark);
+        try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (_) {}
+      });
+    }
+  </script>
+</body>
+</html>
