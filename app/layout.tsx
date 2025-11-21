@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
+import openrakiduamlogo from '@/public/openrakiduamLOGO.webp'
 
 export const metadata: Metadata = {
   title: 'AquaGuard',
@@ -19,7 +20,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#007bff" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <link rel="icon" href="/openrakiduamlogo.webp" type="image/webp" />
+        <link rel="icon" href={openrakiduamlogo.src} type="image/webp" />
       </head>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import openrakiduamlogo from '@/public/openrakiduamLOGO.webp'
 
 export default function RegisterPage() {
   const { signUp, user } = useAuth()
@@ -69,10 +70,10 @@ export default function RegisterPage() {
         {/* Logo y título */}
         <div className="text-center mb-8 animate-fade-in">
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <Image 
-              src="/openrakiduamlogo.webp" 
-              alt="Logo AquaGuard" 
-              width={64} 
+            <Image
+              src={openrakiduamlogo}
+              alt="Logo AquaGuard"
+              width={64}
               height={64}
               className="h-16 w-auto"
             />
@@ -86,7 +87,7 @@ export default function RegisterPage() {
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">
             Crear cuenta
           </h2>
-          
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Campo de nombre */}
             <div>
@@ -143,8 +144,8 @@ export default function RegisterPage() {
                   className="absolute inset-y-0 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                    <circle cx="12" cy="12" r="3" />
                   </svg>
                 </button>
               </div>
@@ -173,8 +174,8 @@ export default function RegisterPage() {
                   className="absolute inset-y-0 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                    <circle cx="12" cy="12" r="3" />
                   </svg>
                 </button>
               </div>
@@ -227,7 +228,7 @@ export default function RegisterPage() {
         <div className="text-center mt-6">
           <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium flex items-center justify-center">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Volver al inicio
           </Link>
