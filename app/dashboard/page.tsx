@@ -25,8 +25,8 @@ export default function DashboardPage() {
 
   // Conectar a Firebase Realtime Database
   useEffect(() => {
-    const lecturasRef = ref(db, 'lecturas')
-    
+    const lecturasRef = ref(db, 'sensor_status/actual')
+
     const unsubscribe = onValue(
       lecturasRef,
       (snapshot) => {
@@ -60,7 +60,7 @@ export default function DashboardPage() {
 
   // Estado para actualizar el tiempo transcurrido cada segundo
   const [, setTick] = useState(0)
-  
+
   useEffect(() => {
     const interval = setInterval(() => {
       setTick(prev => prev + 1)
@@ -85,39 +85,39 @@ export default function DashboardPage() {
         <div className="container mx-auto px-4 py-3 flex">
           <h1 className="text-xl font-bold">Mi Dispositivo</h1>
           <div className="ml-auto flex items-center gap-2">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <div className="flex items-center gap-2">
-              <UserButton />
-            </div>
-            <SheetContent title="Menu">
-  <SheetHeader>
-    <SheetTitle>Menú de navegación</SheetTitle>
-  </SheetHeader>
-  <nav className="flex flex-col gap-4 mt-8">
-    <Link href="/dashboard" className="flex items-center gap-2 py-2 font-medium">
-      <Home className="h-5 w-5" />
-      Panel principal
-    </Link>
-                <Link href="/history" className="flex items-center gap-2 py-2">
-                  <History className="h-5 w-5" />
-                  Historial
-                </Link>
-                <Link href="/alerts" className="flex items-center gap-2 py-2">
-                  <Bell className="h-5 w-5" />
-                  Alertas
-                </Link>
-                <Link href="/info" className="flex items-center gap-2 py-2">
-                  <Info className="h-5 w-5" />
-                  Información
-                </Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-white">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <div className="flex items-center gap-2">
+                <UserButton />
+              </div>
+              <SheetContent title="Menu">
+                <SheetHeader>
+                  <SheetTitle>Menú de navegación</SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col gap-4 mt-8">
+                  <Link href="/dashboard" className="flex items-center gap-2 py-2 font-medium">
+                    <Home className="h-5 w-5" />
+                    Panel principal
+                  </Link>
+                  <Link href="/history" className="flex items-center gap-2 py-2">
+                    <History className="h-5 w-5" />
+                    Historial
+                  </Link>
+                  <Link href="/alerts" className="flex items-center gap-2 py-2">
+                    <Bell className="h-5 w-5" />
+                    Alertas
+                  </Link>
+                  <Link href="/info" className="flex items-center gap-2 py-2">
+                    <Info className="h-5 w-5" />
+                    Información
+                  </Link>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
@@ -209,9 +209,9 @@ export default function DashboardPage() {
                     Voltaje: {lecturas.phVoltaje.toFixed(2)}V
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {parseFloat(calcularPH(lecturas.phVoltaje)) < 7.0 ? '🔴 Ácido' : 
-                     parseFloat(calcularPH(lecturas.phVoltaje)) > 7.8 ? '🔵 Alcalino' : 
-                     '✅ Neutro'}
+                    {parseFloat(calcularPH(lecturas.phVoltaje)) < 7.0 ? '🔴 Ácido' :
+                      parseFloat(calcularPH(lecturas.phVoltaje)) > 7.8 ? '🔵 Alcalino' :
+                        '✅ Neutro'}
                   </p>
                 </CardContent>
               </Card>
