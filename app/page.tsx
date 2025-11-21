@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { SignInPersonalizado, SignUpPersonalizado } from '@/components/ui/sesion-button'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { useTheme } from 'next-themes'
 
 export default function HomePage() {
@@ -90,7 +91,8 @@ export default function HomePage() {
             <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Características</a>
             <a href="#quienes-somos" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">¿Quiénes somos?</a>
             <a href="#contacto" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Contacto</a>
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
+              <ThemeToggle />
               <SignInPersonalizado />
               <SignUpPersonalizado />
             </div>
@@ -123,6 +125,7 @@ export default function HomePage() {
             <a href="#quienes-somos" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-2 w-full font-medium transition-colors" onClick={() => setSidebarOpen(false)}>¿Quiénes somos?</a>
             <a href="#contacto" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-2 w-full font-medium transition-colors" onClick={() => setSidebarOpen(false)}>Contacto</a>
             <div className="w-full flex flex-col gap-2 mt-4">
+              <ThemeToggle />
               <SignInPersonalizado />
               <SignUpPersonalizado />
             </div>
