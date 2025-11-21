@@ -16,7 +16,7 @@ Este proyecto es una aplicación web progresiva (PWA) construida con Next.js 15,
 
 1. **Clona el repositorio:**
    ```bash
-   git clone <REPO_URL>
+   git clone https://github.com/MarTryxz/arduino-mobile-app.git
    cd arduino-mobile-app
    ```
 
@@ -105,6 +105,28 @@ Este proyecto es una aplicación web progresiva (PWA) construida con Next.js 15,
 
 ---
 
+## Integración con Capacitor
+
+Si quieres empaquetar la aplicación como app móvil (Android/iOS) usando Capacitor, asegúrate de que la configuración apunte a la carpeta correcta donde Next.js exporta los archivos estáticos.
+
+1. Crea o edita el archivo `capacitor.config.ts` en la raíz del proyecto:
+   ```ts
+   export default {
+     webDir: "out",
+     appId: "com.tuempresa.arduinomobile",
+     appName: "Arduino Mobile App"
+   };
+   ```
+   > **Nota:** `webDir` debe ser `out`, ya que es la carpeta generada por `npm run build`.
+
+2. Después de construir el proyecto (`npm run build`), ejecuta los comandos de Capacitor para sincronizar y abrir la app en la plataforma deseada:
+   ```bash
+   npx cap sync
+   npx cap open android # o ios
+   ```
+
+---
+
 ## Notas adicionales
 
 - Si usas funcionalidades dinámicas (SSR, API routes), necesitarás un entorno con Node.js (Vercel, etc). Para sitios puramente estáticos, Firebase Hosting es suficiente.
@@ -116,3 +138,4 @@ Este proyecto es una aplicación web progresiva (PWA) construida con Next.js 15,
 ## Licencia
 
 MIT
+<!-- Autor: Martín -->

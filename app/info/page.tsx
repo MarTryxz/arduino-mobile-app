@@ -27,7 +27,7 @@ export default function InfoPage() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent>
+            <SheetContent title="Menu">
               <nav className="flex flex-col gap-4 mt-8">
                 <Link href="/dashboard" className="flex items-center gap-2 py-2">
                   <Home className="h-5 w-5" />
