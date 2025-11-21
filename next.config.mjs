@@ -13,9 +13,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  experimental: {
-    serverComponentsExternalPackages: ['@ducanh2912/next-pwa'],
-  },
+  serverExternalPackages: ['@ducanh2912/next-pwa'],
 }
 
 export default withPWA({
