@@ -1,22 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import {
-  Home,
-  History,
-  Bell,
-  Info,
-  Menu,
   Calendar,
   ChevronLeft,
   ChevronRight,
   Thermometer,
   Droplet,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -34,6 +26,8 @@ const generateHistoryData = (days: number, baseValue: number, variance: number) 
     .reverse()
 }
 
+import { DashboardHeader } from "@/components/dashboard-header"
+
 export default function HistoryPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("7d")
   const [activeTab, setActiveTab] = useState("temperature")
@@ -44,45 +38,14 @@ export default function HistoryPage() {
   const phData = generateHistoryData(selectedPeriod === "7d" ? 7 : selectedPeriod === "14d" ? 14 : 30, 7.2, 0.5)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-app-blue text-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold">Historial</h1>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent title="Menu">
-              <nav className="flex flex-col gap-4 mt-8">
-                <Link href="/dashboard" className="flex items-center gap-2 py-2">
-                  <Home className="h-5 w-5" />
-                  Panel principal
-                </Link>
-                <Link href="/history" className="flex items-center gap-2 py-2 font-medium">
-                  <History className="h-5 w-5" />
-                  Historial
-                </Link>
-                <Link href="/alerts" className="flex items-center gap-2 py-2">
-                  <Bell className="h-5 w-5" />
-                  Alertas
-                </Link>
-                <Link href="/info" className="flex items-center gap-2 py-2">
-                  <Info className="h-5 w-5" />
-                  Información
-                </Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+      <DashboardHeader title="Historial" />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-medium">Datos históricos</h2>
+            <h2 className="text-lg font-medium text-foreground">Datos históricos</h2>
           </div>
 
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>

@@ -1,10 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { Home, History, Bell, Info, Menu, FileText, HelpCircle, ChevronRight } from "lucide-react"
+import { FileText, HelpCircle, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
   Dialog,
@@ -15,41 +14,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
+import { DashboardHeader } from "@/components/dashboard-header"
+
 export default function InfoPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-app-blue text-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold">Información</h1>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent title="Menu">
-              <nav className="flex flex-col gap-4 mt-8">
-                <Link href="/dashboard" className="flex items-center gap-2 py-2">
-                  <Home className="h-5 w-5" />
-                  Panel principal
-                </Link>
-                <Link href="/history" className="flex items-center gap-2 py-2">
-                  <History className="h-5 w-5" />
-                  Historial
-                </Link>
-                <Link href="/alerts" className="flex items-center gap-2 py-2">
-                  <Bell className="h-5 w-5" />
-                  Alertas
-                </Link>
-                <Link href="/info" className="flex items-center gap-2 py-2 font-medium">
-                  <Info className="h-5 w-5" />
-                  Información
-                </Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+      <DashboardHeader title="Información" />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <div className="space-y-4">
@@ -60,7 +30,7 @@ export default function InfoPage() {
                   <div className="p-2 rounded-full bg-app-blue-light/20">
                     <FileText className="h-5 w-5 text-app-blue" />
                   </div>
-                  <div>Términos y condiciones</div>
+                  <div className="text-foreground">Términos y condiciones</div>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </Link>
@@ -73,7 +43,7 @@ export default function InfoPage() {
                 <div className="p-2 rounded-full bg-app-blue-light/20">
                   <HelpCircle className="h-5 w-5 text-app-blue" />
                 </div>
-                <div className="font-medium">Guía de LEDs del dispositivo</div>
+                <div className="font-medium text-foreground">Guía de LEDs del dispositivo</div>
               </div>
 
               <Accordion type="single" collapsible className="w-full">
@@ -153,19 +123,19 @@ export default function InfoPage() {
               <div className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="text-muted-foreground">Modelo:</div>
-                  <div>Arduino Sensor Pro</div>
+                  <div className="text-foreground">Arduino Sensor Pro</div>
 
                   <div className="text-muted-foreground">Número de serie:</div>
-                  <div>ASP-2025-0042</div>
+                  <div className="text-foreground">ASP-2025-0042</div>
 
                   <div className="text-muted-foreground">Versión de firmware:</div>
-                  <div>v2.1.5</div>
+                  <div className="text-foreground">v2.1.5</div>
 
                   <div className="text-muted-foreground">Última actualización:</div>
-                  <div>01/05/2025</div>
+                  <div className="text-foreground">01/05/2025</div>
 
                   <div className="text-muted-foreground">Sensores:</div>
-                  <div>Temperatura, pH, Humedad</div>
+                  <div className="text-foreground">Temperatura, pH, Humedad</div>
                 </div>
               </div>
             </DialogContent>
