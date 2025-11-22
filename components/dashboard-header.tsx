@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Home, History, Bell, Info, Menu, User } from "lucide-react"
+import { Home, History, Bell, Info, Menu, User, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { UserButton } from "@/components/ui/user-button"
@@ -48,6 +48,10 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                                 <Link href="/info" className="flex items-center gap-2 py-2">
                                     <Info className="h-5 w-5" />
                                     Información
+                                </Link>
+                                <Link href="/assistant" className="flex items-center gap-2 py-2 text-blue-600 dark:text-blue-400 font-medium">
+                                    <Sparkles className="h-5 w-5" />
+                                    Asistente IA
                                 </Link>
                                 <Link href="/profile" className="flex items-center gap-2 py-2">
                                     <User className="h-5 w-5" />
