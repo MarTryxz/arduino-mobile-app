@@ -10,7 +10,7 @@ export async function sendMessageToGemini(message: string, contextData: any) {
             return { error: 'API Key no configurada' }
         }
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' })
 
         const systemPrompt = `
       Eres un asistente inteligente experto en mantenimiento de piscinas llamado "AquaGuard AI".
