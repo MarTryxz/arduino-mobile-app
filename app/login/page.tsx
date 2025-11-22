@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import openrakiduamlogo from '@/public/openrakiduamLOGO.webp'
 
 export default function LoginPage() {
     const { signIn, signInWithGoogle, user, signInWithFacebook } = useAuth()
@@ -73,7 +74,7 @@ export default function LoginPage() {
                 <div className="text-center mb-8 animate-fade-in">
                     <div className="flex items-center justify-center space-x-3 mb-4">
                         <Image
-                            src="/openrakiduamlogo.webp"
+                            src={openrakiduamlogo}
                             alt="Logo AquaGuard"
                             width={64}
                             height={64}

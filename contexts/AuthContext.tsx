@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { 
+import {
   User,
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user)
       setLoading(false)
-      
+
       // Actualizar la cookie de sesión cuando cambia el estado de autenticación
       setAuthCookie(user)
     })
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, displayName?: string) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      
+
       // Si se proporciona un nombre, actualizar el perfil
       if (displayName && userCredential.user) {
         await updateProfile(userCredential.user, { displayName })
@@ -127,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Solicitar permisos adicionales (opcional)
       provider.addScope('email')
       provider.addScope('public_profile')
-      
+
       await signInWithPopup(auth, provider)
     } catch (error: any) {
       // Manejo de errores específicos
@@ -157,7 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   )
 }

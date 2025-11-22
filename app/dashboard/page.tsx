@@ -1,12 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Thermometer, Droplet, Wind, Activity, Bell, History, Info, Menu, Home } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Thermometer, Droplet, Wind, Activity } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { UserButton } from '@/components/ui/user-button'
 import { db } from '@/firebase'
 import { ref, onValue } from 'firebase/database'
 
@@ -16,6 +12,8 @@ interface Lecturas {
   humedadAire: number
   phVoltaje: number
 }
+
+import { DashboardHeader } from "@/components/dashboard-header"
 
 export default function DashboardPage() {
   const [lecturas, setLecturas] = useState<Lecturas | null>(null)
@@ -80,47 +78,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-app-blue text-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex">
-          <h1 className="text-xl font-bold">Mi Dispositivo</h1>
-          <div className="ml-auto flex items-center gap-2">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-white">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <div className="flex items-center gap-2">
-                <UserButton />
-              </div>
-              <SheetContent title="Menu">
-                <SheetHeader>
-                  <SheetTitle>Menú de navegación</SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col gap-4 mt-8">
-                  <Link href="/dashboard" className="flex items-center gap-2 py-2 font-medium">
-                    <Home className="h-5 w-5" />
-                    Panel principal
-                  </Link>
-                  <Link href="/history" className="flex items-center gap-2 py-2">
-                    <History className="h-5 w-5" />
-                    Historial
-                  </Link>
-                  <Link href="/alerts" className="flex items-center gap-2 py-2">
-                    <Bell className="h-5 w-5" />
-                    Alertas
-                  </Link>
-                  <Link href="/info" className="flex items-center gap-2 py-2">
-                    <Info className="h-5 w-5" />
-                    Información
-                  </Link>
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+      <DashboardHeader title="Mi Dispositivo" />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Estado de carga o error */}
@@ -142,8 +101,8 @@ export default function DashboardPage() {
         {!loading && !error && lecturas && (
           <>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium">Lecturas en tiempo real</h2>
-              <p className="text-sm text-gray-500">{tiempoTranscurrido()}</p>
+              <h2 className="text-lg font-medium text-foreground">Lecturas en tiempo real</h2>
+              <p className="text-sm text-muted-foreground">{tiempoTranscurrido()}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -225,11 +184,11 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-500">Conexión</p>
-                    <p className="font-medium text-green-600">● En línea</p>
+                    <p className="text-gray-500 dark:text-gray-400">Conexión</p>
+                    <p className="font-medium text-green-600 dark:text-green-400">● En línea</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Última actualización</p>
+                    <p className="text-gray-500 dark:text-gray-400">Última actualización</p>
                     <p className="font-medium">{lastUpdate?.toLocaleTimeString('es-ES')}</p>
                   </div>
                 </div>

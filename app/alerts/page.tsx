@@ -1,10 +1,7 @@
 "use client"
 
-import Link from "next/link"
-import { Home, History, Bell, Info, Menu, AlertTriangle, Thermometer, Wifi, Battery } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { AlertTriangle, Thermometer, Wifi, Battery, Bell } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 // Datos simulados para las alertas
 const alerts = [
@@ -40,46 +37,17 @@ const alerts = [
   },
 ]
 
+import { DashboardHeader } from "@/components/dashboard-header"
+
 export default function AlertsPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-app-blue text-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold">Alertas</h1>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent title="Menu">
-              <nav className="flex flex-col gap-4 mt-8">
-                <Link href="/dashboard" className="flex items-center gap-2 py-2">
-                  <Home className="h-5 w-5" />
-                  Panel principal
-                </Link>
-                <Link href="/history" className="flex items-center gap-2 py-2">
-                  <History className="h-5 w-5" />
-                  Historial
-                </Link>
-                <Link href="/alerts" className="flex items-center gap-2 py-2 font-medium">
-                  <Bell className="h-5 w-5" />
-                  Alertas
-                </Link>
-                <Link href="/info" className="flex items-center gap-2 py-2">
-                  <Info className="h-5 w-5" />
-                  Información
-                </Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+      <DashboardHeader title="Alertas" />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-medium">Alertas recientes</h2>
+          <h2 className="text-lg font-medium text-foreground">Alertas recientes</h2>
         </div>
 
         {alerts.length > 0 ? (
@@ -104,7 +72,7 @@ export default function AlertsPage() {
                       </div>
                     )}
                     <div className="flex-1">
-                      <div className="font-medium">{alert.message}</div>
+                      <div className="font-medium text-foreground">{alert.message}</div>
                       <div className="text-sm text-muted-foreground">
                         {alert.date} • {alert.time}
                       </div>
@@ -116,10 +84,10 @@ export default function AlertsPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="rounded-full bg-gray-100 p-4 inline-flex mx-auto mb-4">
+            <div className="rounded-full bg-gray-100 dark:bg-slate-800 p-4 inline-flex mx-auto mb-4">
               <Bell className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium">No hay alertas</h3>
+            <h3 className="text-lg font-medium text-foreground">No hay alertas</h3>
             <p className="text-sm text-muted-foreground mt-1">Tu dispositivo está funcionando correctamente</p>
           </div>
         )}

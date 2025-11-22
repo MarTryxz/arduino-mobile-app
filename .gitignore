@@ -73,3 +73,4 @@ pnpm-lock.yaml
 
 # clerk configuration (can include secrets)
 /.clerk/
+.env
