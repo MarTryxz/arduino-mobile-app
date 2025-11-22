@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from 'react'
 import { SignInPersonalizado, SignUpPersonalizado } from '@/components/ui/sesion-button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { useTheme } from 'next-themes'
+import { sendEmail } from '@/app/actions/send-email'
+import { toast } from 'sonner'
 
 export default function HomePage() {
   const { user, loading } = useAuth()
@@ -48,6 +50,19 @@ export default function HomePage() {
     showImage(0);
     return () => clearInterval(interval);
   }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const result = await sendEmail(formData)
+
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Mensaje enviado correctamente')
+      e.currentTarget.reset()
+    }
+  }
 
   if (!mounted) return null;
 
@@ -252,10 +267,15 @@ export default function HomePage() {
         <div className="max-w-2xl mx-auto px-4 text-center">
           <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">Contacto</h3>
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-12">¿Tienes preguntas? Nos encantaría escucharte</p>
-          <form className="max-w-lg mx-auto space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            className="max-w-lg mx-auto space-y-4"
+          >
             <div>
               <input
                 type="text"
+                name="name"
+                required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="Nombre"
               />
@@ -263,12 +283,16 @@ export default function HomePage() {
             <div>
               <input
                 type="email"
+                name="email"
+                required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="Correo electrónico"
               />
             </div>
             <div>
               <textarea
+                name="message"
+                required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
                 rows={4}
                 placeholder="Mensaje"
