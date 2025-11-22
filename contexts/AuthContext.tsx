@@ -12,8 +12,10 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   FacebookAuthProvider,
+  getAdditionalUserInfo,
 } from 'firebase/auth'
-import { auth } from '@/firebase'
+import { ref, set } from 'firebase/database'
+import { auth, db } from '@/firebase'
 import { setAuthCookie, removeAuthCookie } from '@/lib/auth-cookies'
 
 // Tipos para el contexto
@@ -77,6 +79,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (displayName && userCredential.user) {
         await updateProfile(userCredential.user, { displayName })
       }
+
+      // Guardar datos del usuario en Realtime Database
+      if (userCredential.user) {
+        await set(ref(db, `users/${userCredential.user.uid}`), {
+          role: 'cliente',
+          lastName: displayName || ''
+        })
+      }
     } catch (error: any) {
       throw new Error(error.message || 'Error al registrarse')
     }
@@ -106,7 +116,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider()
-      await signInWithPopup(auth, provider)
+      const result = await signInWithPopup(auth, provider)
+
+      // Verificar si es un usuario nuevo
+      const additionalUserInfo = getAdditionalUserInfo(result)
+      if (additionalUserInfo?.isNewUser && result.user) {
+        await set(ref(db, `users/${result.user.uid}`), {
+          role: 'cliente',
+          lastName: result.user.displayName || ''
+        })
+      }
     } catch (error: any) {
       // Manejo de errores específicos
       if (error.code === 'auth/popup-closed-by-user') {
@@ -128,7 +147,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       provider.addScope('email')
       provider.addScope('public_profile')
 
-      await signInWithPopup(auth, provider)
+      const result = await signInWithPopup(auth, provider)
+
+      // Verificar si es un usuario nuevo
+      const additionalUserInfo = getAdditionalUserInfo(result)
+      if (additionalUserInfo?.isNewUser && result.user) {
+        await set(ref(db, `users/${result.user.uid}`), {
+          role: 'cliente',
+          lastName: result.user.displayName || ''
+        })
+      }
     } catch (error: any) {
       // Manejo de errores específicos
       if (error.code === 'auth/popup-closed-by-user') {
