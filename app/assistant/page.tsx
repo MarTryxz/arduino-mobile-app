@@ -4,20 +4,20 @@ import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { db } from "@/firebase"
-import { ref, onValue } from "firebase/database"
+import { ref, onValue, set, remove } from "firebase/database"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Bot, Send, User, Sparkles, RefreshCw } from "lucide-react"
+import { Bot, Send, User, Sparkles, RefreshCw, Trash2 } from "lucide-react"
 import { sendMessageToGemini } from "@/app/actions/chat"
 
 interface Message {
     id: string
     role: 'user' | 'assistant'
     text: string
-    timestamp: Date
+    timestamp: string // Changed to string for serialization
 }
 
 export default function AssistantPage() {
@@ -26,17 +26,6 @@ export default function AssistantPage() {
     const [loading, setLoading] = useState(true)
     const [lecturas, setLecturas] = useState<any>(null)
     const [messages, setMessages] = useState<Message[]>([])
-
-    useEffect(() => {
-        setMessages([
-            {
-                id: '1',
-                role: 'assistant',
-                text: 'Hola, soy AquaGuard AI. Estoy analizando los datos de tu piscina. ¿En qué puedo ayudarte hoy?',
-                timestamp: new Date()
-            }
-        ])
-    }, [])
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
@@ -62,12 +51,59 @@ export default function AssistantPage() {
         return () => unsubscribe()
     }, [])
 
+    // Cargar historial de chat
+    useEffect(() => {
+        if (!user) return
+
+        const chatRef = ref(db, `users/${user.uid}/chatHistory`)
+        const unsubscribe = onValue(chatRef, (snapshot) => {
+            const data = snapshot.val()
+            if (data) {
+                // Convert object to array if necessary and sort by timestamp
+                const loadedMessages = Object.values(data) as Message[]
+                setMessages(loadedMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()))
+            } else {
+                setMessages([
+                    {
+                        id: '1',
+                        role: 'assistant',
+                        text: 'Hola, soy AquaGuard AI. Estoy analizando los datos de tu piscina. ¿En qué puedo ayudarte hoy?',
+                        timestamp: new Date().toISOString()
+                    }
+                ])
+            }
+        })
+
+        return () => unsubscribe()
+    }, [user])
+
     // Auto-scroll al final del chat
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollIntoView({ behavior: 'smooth' })
         }
     }, [messages, isTyping])
+
+    const saveMessageToFirebase = async (message: Message) => {
+        if (!user) return
+        try {
+            await set(ref(db, `users/${user.uid}/chatHistory/${message.id}`), message)
+        } catch (error) {
+            console.error("Error saving message:", error)
+        }
+    }
+
+    const clearHistory = async () => {
+        if (!user) return
+        if (confirm('¿Estás seguro de que quieres borrar todo el historial de chat?')) {
+            try {
+                await remove(ref(db, `users/${user.uid}/chatHistory`))
+                // The onValue listener will handle resetting the state
+            } catch (error) {
+                console.error("Error clearing history:", error)
+            }
+        }
+    }
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault()
@@ -77,10 +113,13 @@ export default function AssistantPage() {
             id: Date.now().toString(),
             role: 'user',
             text: input,
-            timestamp: new Date()
+            timestamp: new Date().toISOString()
         }
 
+        // Optimistic update
         setMessages(prev => [...prev, userMessage])
+        saveMessageToFirebase(userMessage)
+
         setInput('')
         setIsTyping(true)
 
@@ -91,10 +130,11 @@ export default function AssistantPage() {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
                 text: response.text || response.error || 'Lo siento, hubo un error al procesar tu mensaje.',
-                timestamp: new Date()
+                timestamp: new Date().toISOString()
             }
 
             setMessages(prev => [...prev, botMessage])
+            saveMessageToFirebase(botMessage)
         } catch (error) {
             console.error('Error sending message:', error)
         } finally {
@@ -111,10 +151,11 @@ export default function AssistantPage() {
             id: Date.now().toString(),
             role: 'user',
             text: "Generar reporte de estado",
-            timestamp: new Date()
+            timestamp: new Date().toISOString()
         }
 
         setMessages(prev => [...prev, userMessage])
+        saveMessageToFirebase(userMessage)
         setIsTyping(true)
 
         try {
@@ -124,10 +165,11 @@ export default function AssistantPage() {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
                 text: response.text || response.error || 'Lo siento, hubo un error al generar el reporte.',
-                timestamp: new Date()
+                timestamp: new Date().toISOString()
             }
 
             setMessages(prev => [...prev, botMessage])
+            saveMessageToFirebase(botMessage)
         } catch (error) {
             console.error('Error generating report:', error)
         } finally {
@@ -165,16 +207,27 @@ export default function AssistantPage() {
                             </div>
                         </div>
 
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={generateReport}
-                            disabled={isTyping || !lecturas}
-                            className="hidden sm:flex gap-2 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                        >
-                            <RefreshCw className="w-4 h-4" />
-                            Generar Reporte
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearHistory}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                title="Borrar Historial"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={generateReport}
+                                disabled={isTyping || !lecturas}
+                                className="hidden sm:flex gap-2 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                Generar Reporte
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Área de mensajes */}
@@ -195,7 +248,7 @@ export default function AssistantPage() {
                                             {msg.text}
                                         </div>
                                         <p className={`text-[10px] mt-1 opacity-70 text-right ${msg.role === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
-                                            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </p>
                                     </div>
                                 </div>

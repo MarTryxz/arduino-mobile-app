@@ -1,51 +1,47 @@
-'use client';
+"use client"
 
-import Spline from '@splinetool/react-spline';
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react'
+import Spline from '@splinetool/react-spline'
 
 interface PoolSceneProps {
-    sensorActivo?: string | null;
+    sensorActivo: string | null
 }
 
 export default function PoolScene({ sensorActivo }: PoolSceneProps) {
-    const [isLoading, setIsLoading] = useState(true);
-    const splineRef = useRef<any>(null);
+    const splineRef = useRef<any>(null)
+
+    function onLoad(splineApp: any) {
+        // Guardamos la referencia a la app de Spline para poder controlarla
+        splineRef.current = splineApp
+    }
 
     useEffect(() => {
-        if (sensorActivo && splineRef.current) {
-            console.log('Triggering Spline event for:', sensorActivo);
+        if (splineRef.current) {
+            // LOGICA SIMPLIFICADA:
+            // Si hay un sensor activo (cualquiera), enviamos 'zoom'.
+            // Si es null (se acabó el tiempo), enviamos 'default'.
+            const valorParaSpline = sensorActivo ? 'zoom' : 'default';
+
             try {
-                // Simular un clic completo (Mouse Down + Mouse Up)
-                splineRef.current.emitEvent('mouseDown', 'pool');
-                setTimeout(() => {
-                    splineRef.current.emitEvent('mouseUp', 'pool');
-                }, 100);
-            } catch (error) {
-                console.error('Error emitting event:', error);
+                splineRef.current.setVariable('sensor', valorParaSpline);
+            } catch (e) {
+                console.error("La variable 'sensor' no existe en la escena de Spline aún.");
             }
         }
-    }, [sensorActivo]);
+    }, [sensorActivo])
 
     return (
-        <div className="w-full h-[500px] bg-slate-900 rounded-2xl overflow-hidden relative shadow-xl">
-            {/* Spinner de carga */}
-            {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center text-slate-500 pointer-events-none z-10 bg-slate-900">
-                    <div className="flex flex-col items-center gap-2">
-                        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-sm font-medium">Cargando piscina...</span>
-                    </div>
-                </div>
-            )}
+        <div className="w-full h-[400px] lg:h-full min-h-[400px] bg-slate-900 rounded-xl overflow-hidden relative border border-slate-800 shadow-inner">
+            {/* Mensaje de carga simple */}
+            <div className="absolute inset-0 flex items-center justify-center text-slate-600 -z-10">
+                Cargando Modelo 3D...
+            </div>
 
             <Spline
                 scene="https://prod.spline.design/FLOnYaK9MwC3pcu6/scene.splinecode"
+                onLoad={onLoad}
                 className="w-full h-full"
-                onLoad={(spline) => {
-                    setIsLoading(false);
-                    splineRef.current = spline;
-                }}
             />
         </div>
-    );
+    )
 }
