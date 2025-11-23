@@ -14,12 +14,14 @@ interface Lecturas {
 }
 
 import { DashboardHeader } from "@/components/dashboard-header"
+import PoolScene from "@/components/PoolScene"
 
 export default function DashboardPage() {
   const [lecturas, setLecturas] = useState<Lecturas | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+  const [sensorActivo, setSensorActivo] = useState<string | null>(null)
 
   // Conectar a Firebase Realtime Database
   useEffect(() => {
@@ -77,6 +79,12 @@ export default function DashboardPage() {
     return `Actualizado hace ${horas} hora${horas > 1 ? 's' : ''}`
   }
 
+  const handleCardClick = (sensor: string) => {
+    setSensorActivo(sensor)
+    // Resetear después de un momento para permitir volver a clicar
+    setTimeout(() => setSensorActivo(null), 1000)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
       <DashboardHeader title="Mi Dispositivo" />
@@ -105,75 +113,91 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground">{tiempoTranscurrido()}</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Temperatura del Agua */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium flex items-center">
-                    <Droplet className="h-4 w-4 mr-2 text-blue-500" />
-                    Temperatura del Agua
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{lecturas.tempAgua.toFixed(1)}°C</div>
-                  <p className="text-sm text-muted-foreground">
-                    {lecturas.tempAgua < 18 ? '❄️ Fría' : lecturas.tempAgua > 28 ? '🔥 Caliente' : '✅ Óptima'}
-                  </p>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* COLUMNA IZQUIERDA: Tarjetas de sensores */}
+              <div className="lg:col-span-1 flex flex-col gap-4">
+                {/* Temperatura del Agua */}
+                <div onClick={() => handleCardClick('tempAgua')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-medium flex items-center">
+                        <Droplet className="h-4 w-4 mr-2 text-blue-500" />
+                        Temperatura del Agua
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{lecturas.tempAgua.toFixed(1)}°C</div>
+                      <p className="text-sm text-muted-foreground">
+                        {lecturas.tempAgua < 18 ? '❄️ Fría' : lecturas.tempAgua > 28 ? '🔥 Caliente' : '✅ Óptima'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
 
-              {/* Temperatura del Aire */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium flex items-center">
-                    <Thermometer className="h-4 w-4 mr-2 text-orange-500" />
-                    Temperatura del Aire
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{lecturas.tempAire.toFixed(1)}°C</div>
-                  <p className="text-sm text-muted-foreground">
-                    {lecturas.tempAire < 15 ? '❄️ Frío' : lecturas.tempAire > 30 ? '🔥 Caluroso' : '✅ Agradable'}
-                  </p>
-                </CardContent>
-              </Card>
+                {/* Temperatura del Aire */}
+                <div onClick={() => handleCardClick('tempAire')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-medium flex items-center">
+                        <Thermometer className="h-4 w-4 mr-2 text-orange-500" />
+                        Temperatura del Aire
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{lecturas.tempAire.toFixed(1)}°C</div>
+                      <p className="text-sm text-muted-foreground">
+                        {lecturas.tempAire < 15 ? '❄️ Frío' : lecturas.tempAire > 30 ? '🔥 Caluroso' : '✅ Agradable'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
 
-              {/* Humedad del Aire */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium flex items-center">
-                    <Wind className="h-4 w-4 mr-2 text-cyan-500" />
-                    Humedad del Aire
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{lecturas.humedadAire.toFixed(1)}%</div>
-                  <p className="text-sm text-muted-foreground">
-                    {lecturas.humedadAire < 30 ? '🏜️ Seco' : lecturas.humedadAire > 70 ? '💧 Húmedo' : '✅ Normal'}
-                  </p>
-                </CardContent>
-              </Card>
+                {/* Humedad del Aire */}
+                <div onClick={() => handleCardClick('humedadAire')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-medium flex items-center">
+                        <Wind className="h-4 w-4 mr-2 text-cyan-500" />
+                        Humedad del Aire
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{lecturas.humedadAire.toFixed(1)}%</div>
+                      <p className="text-sm text-muted-foreground">
+                        {lecturas.humedadAire < 30 ? '🏜️ Seco' : lecturas.humedadAire > 70 ? '💧 Húmedo' : '✅ Normal'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
 
-              {/* pH del Agua */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium flex items-center">
-                    <Activity className="h-4 w-4 mr-2 text-green-500" />
-                    Nivel de pH
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{calcularPH(lecturas.phVoltaje)}</div>
-                  <p className="text-sm text-muted-foreground">
-                    Voltaje: {lecturas.phVoltaje.toFixed(2)}V
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {parseFloat(calcularPH(lecturas.phVoltaje)) < 7.0 ? '🔴 Ácido' :
-                      parseFloat(calcularPH(lecturas.phVoltaje)) > 7.8 ? '🔵 Alcalino' :
-                        '✅ Neutro'}
-                  </p>
-                </CardContent>
-              </Card>
+                {/* pH del Agua */}
+                <div onClick={() => handleCardClick('ph')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-medium flex items-center">
+                        <Activity className="h-4 w-4 mr-2 text-green-500" />
+                        Nivel de pH
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{calcularPH(lecturas.phVoltaje)}</div>
+                      <p className="text-sm text-muted-foreground">
+                        Voltaje: {lecturas.phVoltaje.toFixed(2)}V
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {parseFloat(calcularPH(lecturas.phVoltaje)) < 7.0 ? '🔴 Ácido' :
+                          parseFloat(calcularPH(lecturas.phVoltaje)) > 7.8 ? '🔵 Alcalino' :
+                            '✅ Neutro'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* COLUMNA DERECHA: Modelo 3D */}
+              <div className="lg:col-span-2">
+                <PoolScene sensorActivo={sensorActivo} />
+              </div>
             </div>
 
             {/* Información adicional */}

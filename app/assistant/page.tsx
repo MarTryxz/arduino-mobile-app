@@ -25,14 +25,18 @@ export default function AssistantPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(true)
     const [lecturas, setLecturas] = useState<any>(null)
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: '1',
-            role: 'assistant',
-            text: 'Hola, soy AquaGuard AI. Estoy analizando los datos de tu piscina. ¿En qué puedo ayudarte hoy?',
-            timestamp: new Date()
-        }
-    ])
+    const [messages, setMessages] = useState<Message[]>([])
+
+    useEffect(() => {
+        setMessages([
+            {
+                id: '1',
+                role: 'assistant',
+                text: 'Hola, soy AquaGuard AI. Estoy analizando los datos de tu piscina. ¿En qué puedo ayudarte hoy?',
+                timestamp: new Date()
+            }
+        ])
+    }, [])
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
@@ -183,8 +187,8 @@ export default function AssistantPage() {
                                 >
                                     <div
                                         className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${msg.role === 'user'
-                                                ? 'bg-blue-600 text-white rounded-br-none'
-                                                : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200 rounded-bl-none border border-gray-200 dark:border-gray-700'
+                                            ? 'bg-blue-600 text-white rounded-br-none'
+                                            : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200 rounded-bl-none border border-gray-200 dark:border-gray-700'
                                             }`}
                                     >
                                         <div className="whitespace-pre-wrap text-sm leading-relaxed">
