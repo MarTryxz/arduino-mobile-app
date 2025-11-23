@@ -16,7 +16,7 @@ export async function sendEmail(formData: FormData) {
     try {
         const { data, error } = await resend.emails.send({
             from: 'AcquaGuard <onboarding@resend.dev>',
-            to: ['martin.romoarros224@gmail.com'],
+            to: ['openrakiduamstudio@gmail.com'],
             subject: `Nuevo mensaje de contacto de ${name}`,
             html: `
         <h2>Nuevo mensaje de contacto</h2>
