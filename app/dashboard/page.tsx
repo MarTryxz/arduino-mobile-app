@@ -177,7 +177,7 @@ export default function DashboardPage() {
 
               {/* COLUMNA DERECHA: Escena 3D */}
               <div className="lg:col-span-2 h-[500px] lg:h-auto">
-                <PoolScene sensorActivo={sensorActivo} />
+                <PoolScene sensorActivo={sensorActivo} temperatura={lecturas.tempAgua} />
               </div>
             </div>
 

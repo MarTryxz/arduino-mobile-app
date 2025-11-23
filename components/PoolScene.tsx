@@ -5,38 +5,49 @@ import Spline from '@splinetool/react-spline'
 
 interface PoolSceneProps {
     sensorActivo: string | null
+    temperatura: number // <--- 1. Nuevo Prop
 }
 
-export default function PoolScene({ sensorActivo }: PoolSceneProps) {
+export default function PoolScene({ sensorActivo, temperatura }: PoolSceneProps) {
     const splineRef = useRef<any>(null)
 
     function onLoad(splineApp: any) {
-        // Guardamos la referencia a la app de Spline para poder controlarla
         splineRef.current = splineApp
     }
 
+    // Efecto 1: Control de CÁMARA (Zoom)
     useEffect(() => {
         if (splineRef.current) {
-            // LOGICA SIMPLIFICADA:
-            // Si hay un sensor activo (cualquiera), enviamos 'zoom'.
-            // Si es null (se acabó el tiempo), enviamos 'default'.
-            const valorParaSpline = sensorActivo ? 'zoom' : 'default';
-
+            const valorCamara = sensorActivo ? 'zoom' : 'default';
             try {
-                splineRef.current.setVariable('sensor', valorParaSpline);
-            } catch (e) {
-                console.error("La variable 'sensor' no existe en la escena de Spline aún.");
-            }
+                splineRef.current.setVariable('sensor', valorCamara);
+            } catch (e) { }
         }
     }, [sensorActivo])
 
+    // Efecto 2: Control de COLOR DEL AGUA
+    useEffect(() => {
+        if (splineRef.current) {
+            let estado = 'normal';
+
+            if (temperatura < 22) {
+                estado = 'frio';    // <--- CAMBIO: Antes era 'fria', ahora coincide con tu estado Spline
+            } else if (temperatura > 28) {
+                estado = 'calor';   // <--- CAMBIO: Antes era 'caliente', ahora coincide con tu estado Spline
+            }
+
+            try {
+                // Asegúrate que en Spline la variable se llame "estado_agua" (o ajusta aquí si le pusiste otro nombre)
+                splineRef.current.setVariable('estado_agua', estado);
+                console.log(`Enviando a Spline: ${estado}`);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }, [temperatura])
+
     return (
         <div className="w-full h-[400px] lg:h-full min-h-[400px] bg-slate-900 rounded-xl overflow-hidden relative border border-slate-800 shadow-inner">
-            {/* Mensaje de carga simple */}
-            <div className="absolute inset-0 flex items-center justify-center text-slate-600 -z-10">
-                Cargando Modelo 3D...
-            </div>
-
             <Spline
                 scene="https://prod.spline.design/FLOnYaK9MwC3pcu6/scene.splinecode"
                 onLoad={onLoad}
