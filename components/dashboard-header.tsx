@@ -33,27 +33,27 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                                 <SheetTitle>Menú de navegación</SheetTitle>
                             </SheetHeader>
                             <nav className="flex flex-col gap-4 mt-8">
-                                <Link href="/dashboard" className="flex items-center gap-2 py-2 font-medium">
+                                <Link href="/dashboard" className="flex items-center gap-2 py-2 font-medium text-gray-700 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                     <Home className="h-5 w-5" />
                                     Panel principal
                                 </Link>
-                                <Link href="/history" className="flex items-center gap-2 py-2">
+                                <Link href="/history" className="flex items-center gap-2 py-2 font-medium text-gray-700 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                     <History className="h-5 w-5" />
                                     Historial
                                 </Link>
-                                <Link href="/alerts" className="flex items-center gap-2 py-2">
+                                <Link href="/alerts" className="flex items-center gap-2 py-2 font-medium text-gray-700 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                     <Bell className="h-5 w-5" />
                                     Alertas
                                 </Link>
-                                <Link href="/info" className="flex items-center gap-2 py-2">
+                                <Link href="/info" className="flex items-center gap-2 py-2 font-medium text-gray-700 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                     <Info className="h-5 w-5" />
                                     Información
                                 </Link>
-                                <Link href="/assistant" className="flex items-center gap-2 py-2 text-blue-600 dark:text-blue-400 font-medium">
+                                <Link href="/assistant" className="flex items-center gap-2 py-2 font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
                                     <Sparkles className="h-5 w-5" />
                                     Asistente IA
                                 </Link>
-                                <Link href="/profile" className="flex items-center gap-2 py-2">
+                                <Link href="/profile" className="flex items-center gap-2 py-2 font-medium text-gray-700 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                     <User className="h-5 w-5" />
                                     Mi Perfil
                                 </Link>

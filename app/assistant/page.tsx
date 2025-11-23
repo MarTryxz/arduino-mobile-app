@@ -288,7 +288,7 @@ export default function AssistantPage() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder="Escribe tu pregunta sobre la piscina..."
-                                className="flex-1 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-gray-700 focus-visible:ring-blue-500"
+                                className="flex-1 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-gray-700 focus-visible:ring-blue-500 text-gray-900 dark:text-gray-100"
                                 disabled={isTyping}
                             />
 
