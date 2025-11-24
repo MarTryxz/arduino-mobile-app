@@ -1,17 +1,22 @@
 "use client"
 
 import Link from "next/link"
-import { Home, History, Bell, Info, Menu, User, Sparkles } from "lucide-react"
+import { Home, History, Bell, Info, Menu, User, Sparkles, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { UserButton } from "@/components/ui/user-button"
 import { ThemeToggle } from "@/components/theme-toggle"
+
+import { useState } from "react"
+import { PremiumModal } from "@/components/premium-modal"
 
 interface DashboardHeaderProps {
     title: string
 }
 
 export function DashboardHeader({ title }: DashboardHeaderProps) {
+    const [showPremiumModal, setShowPremiumModal] = useState(false)
+
     return (
         <header className="bg-app-blue text-white border-b sticky top-0 z-10">
             <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -33,6 +38,13 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                                 <SheetTitle>Menú de navegación</SheetTitle>
                             </SheetHeader>
                             <nav className="flex flex-col gap-4 mt-8">
+                                <div
+                                    onClick={() => setShowPremiumModal(true)}
+                                    className="flex items-center gap-2 py-3 px-4 font-bold text-white bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 mb-2 cursor-pointer"
+                                >
+                                    <Crown className="h-5 w-5 fill-current" />
+                                    Obtener Premium
+                                </div>
                                 <Link href="/dashboard" className="flex items-center gap-2 py-2 font-medium text-gray-700 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                     <Home className="h-5 w-5" />
                                     Panel principal
@@ -68,6 +80,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                     </Sheet>
                 </div>
             </div>
+            <PremiumModal open={showPremiumModal} onOpenChange={setShowPremiumModal} />
         </header>
     )
 }
