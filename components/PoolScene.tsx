@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react'
 import Spline from '@splinetool/react-spline'
+import { ErrorBoundary } from '@/components/ui/error-boundary'
 
 interface PoolSceneProps {
     sensorActivo: string | null
@@ -58,11 +59,13 @@ export default function PoolScene({ sensorActivo, temperatura }: PoolSceneProps)
 
     return (
         <div className="w-full h-[400px] lg:h-full min-h-[400px] bg-slate-900 rounded-xl overflow-hidden relative border border-slate-800 shadow-inner">
-            <Spline
-                scene="https://prod.spline.design/FLOnYaK9MwC3pcu6/scene.splinecode"
-                onLoad={onLoad}
-                className="w-full h-full"
-            />
+            <ErrorBoundary>
+                <Spline
+                    scene="https://prod.spline.design/FLOnYaK9MwC3pcu6/scene.splinecode"
+                    onLoad={onLoad}
+                    className="w-full h-full"
+                />
+            </ErrorBoundary>
         </div>
     )
 }
