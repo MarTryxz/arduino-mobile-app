@@ -10,8 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { User, Phone, MapPin, Save, ArrowLeft, Cpu } from "lucide-react"
+import { User, Phone, MapPin, Save, ArrowLeft, Cpu, Crown, Shield } from "lucide-react"
 import Link from "next/link"
+import { Badge } from "@/components/ui/badge"
 
 export default function ProfilePage() {
     const { user } = useAuth()
@@ -20,6 +21,7 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+    const [role, setRole] = useState<string>('cliente')
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -50,6 +52,9 @@ export default function ProfilePage() {
                         poolLocation: data.poolLocation || '',
                         macAddress: data.macAddress || ''
                     })
+                    if (data.role) {
+                        setRole(data.role)
+                    }
                 }
                 setLoading(false)
             })
@@ -62,10 +67,6 @@ export default function ProfilePage() {
 
     const toggleEdit = () => {
         if (isEditing) {
-            // Reset form data to original values if cancelling
-            // (This would require storing original data separately or re-fetching, 
-            // for simplicity here we just toggle off and let the next fetch or state persistence handle it, 
-            // but ideally we should reset. Let's re-fetch or just keep current state if it's acceptable behavior)
             setIsEditing(false)
         } else {
             setIsEditing(true)
@@ -74,13 +75,15 @@ export default function ProfilePage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
+    }
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target
         setFormData(prev => ({
             ...prev,
             [name]: value
         }))
     }
-
-
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -116,18 +119,69 @@ export default function ProfilePage() {
         )
     }
 
+    const getPlanDetails = () => {
+        if (role === 'admin') {
+            return {
+                name: 'Administrador',
+                icon: <Shield className="w-5 h-5 text-white" />,
+                style: 'bg-gradient-to-r from-red-600 to-red-800 text-white border-red-500',
+                badge: 'ADMIN'
+            }
+        } else if (role === 'cliente_premium') {
+            return {
+                name: 'Plan PRO',
+                icon: <Crown className="w-5 h-5 text-white" />,
+                style: 'bg-gradient-to-r from-amber-400 to-orange-600 text-white border-amber-500',
+                badge: 'PRO'
+            }
+        } else {
+            return {
+                name: 'Plan Gratuito',
+                icon: <User className="w-5 h-5 text-gray-600 dark:text-gray-300" />,
+                style: 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700',
+                badge: 'FREE'
+            }
+        }
+    }
+
+    const plan = getPlanDetails()
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
             <DashboardHeader title="Mi Perfil" />
 
             <main className="container mx-auto px-4 py-8">
-                <div className="max-w-2xl mx-auto">
-                    <div className="mb-6">
+                <div className="max-w-2xl mx-auto space-y-6">
+                    <div className="flex items-center justify-between">
                         <Link href="/dashboard" className="inline-flex items-center text-sm text-gray-500 hover:text-blue-600 transition-colors">
                             <ArrowLeft className="w-4 h-4 mr-1" />
                             Volver al Dashboard
                         </Link>
                     </div>
+
+                    {/* Plan Card */}
+                    <Card className={`overflow-hidden border-2 ${role !== 'cliente' ? 'shadow-lg' : ''}`}>
+                        <div className={`p-6 flex items-center justify-between ${plan.style}`}>
+                            <div className="flex items-center gap-4">
+                                <div className={`p-3 rounded-full ${role === 'cliente' ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white/20'}`}>
+                                    {plan.icon}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold">{plan.name}</h3>
+                                    <p className={`text-sm ${role === 'cliente' ? 'text-gray-500 dark:text-gray-400' : 'text-white/80'}`}>
+                                        {role === 'cliente' ? 'Actualiza a PRO para más funciones' : 'Tienes acceso total al sistema'}
+                                    </p>
+                                </div>
+                            </div>
+                            {role === 'cliente' && (
+                                <Button asChild variant="default" size="sm" className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white border-none">
+                                    <Link href="/assistant">
+                                        Obtener Premium
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
+                    </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
@@ -162,7 +216,7 @@ export default function ProfilePage() {
                                                     id="firstName"
                                                     name="firstName"
                                                     value={formData.firstName}
-                                                    onChange={handleChange}
+                                                    onChange={handleInputChange}
                                                     className="pl-10"
                                                     placeholder="Tu nombre"
                                                 />
@@ -178,7 +232,7 @@ export default function ProfilePage() {
                                                     id="lastName"
                                                     name="lastName"
                                                     value={formData.lastName}
-                                                    onChange={handleChange}
+                                                    onChange={handleInputChange}
                                                     className="pl-10"
                                                     placeholder="Tu apellido"
                                                 />
@@ -195,7 +249,7 @@ export default function ProfilePage() {
                                                 id="phone"
                                                 name="phone"
                                                 value={formData.phone}
-                                                onChange={handleChange}
+                                                onChange={handleInputChange}
                                                 className="pl-10"
                                                 placeholder="+56 9 1234 5678"
                                             />
@@ -211,7 +265,7 @@ export default function ProfilePage() {
                                                 id="poolLocation"
                                                 name="poolLocation"
                                                 value={formData.poolLocation}
-                                                onChange={handleChange}
+                                                onChange={handleInputChange}
                                                 className="pl-10"
                                                 placeholder="Ej: Santiago, Chile"
                                             />
@@ -227,7 +281,7 @@ export default function ProfilePage() {
                                                 id="macAddress"
                                                 name="macAddress"
                                                 value={formData.macAddress}
-                                                onChange={handleChange}
+                                                onChange={handleInputChange}
                                                 className="pl-10 font-mono"
                                                 placeholder="AA:BB:CC:DD:EE:FF"
                                             />

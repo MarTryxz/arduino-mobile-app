@@ -12,6 +12,10 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useAuth } from "@/contexts/AuthContext"
+import { db } from "@/firebase"
+import { ref, update } from "firebase/database"
+import { toast } from "sonner"
 
 interface PremiumModalProps {
     open: boolean
@@ -19,6 +23,23 @@ interface PremiumModalProps {
 }
 
 export function PremiumModal({ open, onOpenChange }: PremiumModalProps) {
+    const { user } = useAuth()
+
+    const handleUpgrade = async () => {
+        if (!user) return
+
+        try {
+            await update(ref(db, `users/${user.uid}`), {
+                role: 'cliente_premium'
+            })
+            toast.success("¡Felicidades! Ahora eres usuario Premium.")
+            onOpenChange(false)
+        } catch (error) {
+            console.error("Error updating role:", error)
+            toast.error("Hubo un error al procesar tu solicitud.")
+        }
+    }
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 overflow-hidden bg-slate-50 dark:bg-slate-950 border-none">
@@ -60,7 +81,7 @@ export function PremiumModal({ open, onOpenChange }: PremiumModalProps) {
                                     </ul>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white" size="lg">
+                                    <Button onClick={handleUpgrade} className="w-full bg-blue-600 hover:bg-blue-700 text-white" size="lg">
                                         Elegir Mensual
                                     </Button>
                                 </CardFooter>
@@ -103,7 +124,7 @@ export function PremiumModal({ open, onOpenChange }: PremiumModalProps) {
                                     </ul>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg" size="lg">
+                                    <Button onClick={handleUpgrade} className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg" size="lg">
                                         Obtener Premium Anual
                                     </Button>
                                 </CardFooter>
