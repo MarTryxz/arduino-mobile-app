@@ -98,6 +98,12 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                                     <User className="h-5 w-5" />
                                     Mi Perfil
                                 </Link>
+                                {isAdmin && (
+                                    <Link href="/admin/users" className="flex items-center gap-2 py-2 font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
+                                        <Shield className="h-5 w-5" />
+                                        Administrar Usuarios
+                                    </Link>
+                                )}
                                 <div className="mt-auto pt-4 border-t md:hidden">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium">Cuenta</span>
