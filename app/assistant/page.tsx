@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Bot, Send, User, Sparkles, RefreshCw, Trash2 } from "lucide-react"
 import { sendMessageToGemini } from "@/app/actions/chat"
+import { PremiumModal } from "@/components/premium-modal"
 
 interface Message {
     id: string
@@ -28,6 +29,8 @@ export default function AssistantPage() {
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
+    const [showPremiumModal, setShowPremiumModal] = useState(false)
+    const [roleLoading, setRoleLoading] = useState(true)
     const scrollRef = useRef<HTMLDivElement>(null)
 
     // Redirigir si no hay usuario
@@ -36,6 +39,22 @@ export default function AssistantPage() {
             router.push('/login')
         }
     }, [user, loading, router])
+
+    // Verificar rol del usuario
+    useEffect(() => {
+        if (!user) return
+
+        const roleRef = ref(db, `users/${user.uid}/role`)
+        const unsubscribe = onValue(roleRef, (snapshot) => {
+            const role = snapshot.val()
+            if (role === 'cliente') {
+                setShowPremiumModal(true)
+            }
+            setRoleLoading(false)
+        })
+
+        return () => unsubscribe()
+    }, [user])
 
     // Cargar datos de sensores
     useEffect(() => {
@@ -177,7 +196,14 @@ export default function AssistantPage() {
         }
     }
 
-    if (loading) {
+    const handleModalOpenChange = (open: boolean) => {
+        if (!open) {
+            router.push('/dashboard')
+        }
+        setShowPremiumModal(open)
+    }
+
+    if (loading || roleLoading) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -187,9 +213,10 @@ export default function AssistantPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300 flex flex-col">
+            <PremiumModal open={showPremiumModal} onOpenChange={handleModalOpenChange} />
             <DashboardHeader title="Asistente IA" />
 
-            <main className="flex-1 container mx-auto px-4 py-6 flex flex-col max-h-[calc(100vh-64px)]">
+            <main className={`flex-1 container mx-auto px-4 py-6 flex flex-col max-h-[calc(100vh-64px)] ${showPremiumModal ? 'blur-sm pointer-events-none' : ''}`}>
                 <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-800">
 
                     {/* Header del chat */}
