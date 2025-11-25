@@ -12,6 +12,7 @@ import { ref, onValue } from "firebase/database"
 
 import { useState, useEffect } from "react"
 import { PremiumModal } from "@/components/premium-modal"
+import { SubscriptionModal } from "@/components/subscription-modal"
 
 interface DashboardHeaderProps {
     title: string
@@ -20,6 +21,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ title }: DashboardHeaderProps) {
     const { user } = useAuth()
     const [showPremiumModal, setShowPremiumModal] = useState(false)
+    const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
     const [role, setRole] = useState<string | null>(null)
 
     useEffect(() => {
@@ -68,10 +70,11 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                                     </div>
                                 ) : (
                                     <div
-                                        className={`flex items-center gap-2 py-3 px-4 font-bold text-white rounded-lg shadow-md mb-2 cursor-default ${isAdmin ? 'bg-gradient-to-r from-red-600 to-red-800' : 'bg-gradient-to-r from-amber-500 to-orange-600'}`}
+                                        onClick={() => isAdmin ? null : setShowSubscriptionModal(true)}
+                                        className={`flex items-center gap-2 py-3 px-4 font-bold text-white rounded-lg shadow-md mb-2 ${isAdmin ? 'bg-gradient-to-r from-red-600 to-red-800 cursor-default' : 'bg-gradient-to-r from-amber-500 to-orange-600 cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300'}`}
                                     >
                                         {isAdmin ? <Shield className="h-5 w-5 fill-current" /> : <Crown className="h-5 w-5 fill-current" />}
-                                        {isAdmin ? 'Administrador' : 'Plan PRO Activo'}
+                                        {isAdmin ? 'Administrador' : 'Gestionar Suscripción'}
                                     </div>
                                 )}
                                 <Link href="/dashboard" className="flex items-center gap-2 py-2 font-medium text-gray-700 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
@@ -93,6 +96,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                                 <Link href="/assistant" className="flex items-center gap-2 py-2 font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
                                     <Sparkles className="h-5 w-5" />
                                     Asistente IA
+                                    <Crown className="h-3 w-3 ml-1 text-amber-500 fill-amber-500" />
                                 </Link>
                                 <Link href="/profile" className="flex items-center gap-2 py-2 font-medium text-gray-700 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                     <User className="h-5 w-5" />
@@ -116,6 +120,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                 </div>
             </div>
             <PremiumModal open={showPremiumModal} onOpenChange={setShowPremiumModal} />
+            <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
         </header>
     )
 }
