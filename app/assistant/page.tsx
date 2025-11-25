@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Bot, Send, User, Sparkles, RefreshCw, Trash2 } from "lucide-react"
 import { sendMessageToGemini } from "@/app/actions/chat"
 import { PremiumModal } from "@/components/premium-modal"
+import ReactMarkdown from 'react-markdown'
 
 interface Message {
     id: string
@@ -271,8 +272,18 @@ export default function AssistantPage() {
                                             : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200 rounded-bl-none border border-gray-200 dark:border-gray-700'
                                             }`}
                                     >
-                                        <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                                            {msg.text}
+                                        <div className="text-sm leading-relaxed">
+                                            <ReactMarkdown
+                                                components={{
+                                                    p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
+                                                    ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2" {...props} />,
+                                                    ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2" {...props} />,
+                                                    li: ({ node, ...props }) => <li className="mb-0.5" {...props} />,
+                                                    strong: ({ node, ...props }) => <strong className="font-bold" {...props} />,
+                                                }}
+                                            >
+                                                {msg.text}
+                                            </ReactMarkdown>
                                         </div>
                                         <p className={`text-[10px] mt-1 opacity-70 text-right ${msg.role === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
                                             {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
