@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { db } from "@/firebase"
-import { ref, onValue, update } from "firebase/database"
+import { deleteUser } from "firebase/auth"
+import { ref, onValue, update, remove } from "firebase/database"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,9 +14,10 @@ import { Label } from "@/components/ui/label"
 import { User, Phone, MapPin, Save, ArrowLeft, Cpu, Crown, Shield } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 
 export default function ProfilePage() {
-    const { user } = useAuth()
+    const { user, logOut } = useAuth()
     const router = useRouter()
     const [isEditing, setIsEditing] = useState(false)
     const [loading, setLoading] = useState(true)
@@ -108,6 +110,63 @@ export default function ProfilePage() {
             setMessage({ type: 'error', text: 'Error al actualizar el perfil' })
         } finally {
             setSaving(false)
+        }
+    }
+
+    const handleCancelSubscription = async () => {
+        if (!user) return
+
+        if (confirm("¿Estás seguro de que quieres cancelar tu suscripción Premium? Perderás los beneficios inmediatamente.")) {
+            try {
+                const userRef = ref(db, `users/${user.uid}`)
+                await update(userRef, {
+                    role: 'cliente'
+                })
+                toast.success("Suscripción cancelada correctamente")
+            } catch (error) {
+                console.error("Error cancelling subscription:", error)
+                toast.error("Error al cancelar la suscripción")
+            }
+        }
+    }
+    const handleDeleteAccount = async () => {
+        if (!user) return
+
+        if (confirm("¿Estás SEGURO de que quieres eliminar tu cuenta? Esta acción NO se puede deshacer y perderás todos tus datos.")) {
+            try {
+                // Check if login is recent (within last 5 minutes)
+                if (user.metadata.lastSignInTime) {
+                    const lastSignIn = new Date(user.metadata.lastSignInTime).getTime()
+                    const now = new Date().getTime()
+                    // 5 minutes in milliseconds
+                    if (now - lastSignIn > 5 * 60 * 1000) {
+                        toast.error("Por seguridad, debes haber iniciado sesión recientemente. Te redirigiremos al login.")
+                        setTimeout(async () => {
+                            await logOut()
+                            router.push('/login')
+                        }, 2000)
+                        return
+                    }
+                }
+
+                // 1. Delete user data from Realtime Database
+                await remove(ref(db, `users/${user.uid}`))
+
+                // 2. Delete user from Firebase Auth
+                await deleteUser(user)
+
+                router.push('/')
+                toast.success("Cuenta eliminada correctamente")
+            } catch (error: any) {
+                console.error("Error deleting account:", error)
+                if (error.code === 'auth/requires-recent-login') {
+                    toast.error("Por seguridad, inicia sesión nuevamente e inténtalo de nuevo.")
+                    await logOut()
+                    router.push('/login')
+                } else {
+                    toast.error("Error al eliminar la cuenta: " + error.message)
+                }
+            }
         }
     }
 
@@ -357,6 +416,47 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
                             )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Danger Zone */}
+                    <Card className="border-red-200 dark:border-red-900 shadow-sm">
+                        <CardHeader>
+                            <CardTitle className="text-xl font-bold text-red-600 dark:text-red-500">Zona de Peligro</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {role === 'cliente_premium' && (
+                                <div className="flex items-center justify-between p-4 border border-red-100 dark:border-red-900/30 rounded-lg bg-red-50 dark:bg-red-900/10">
+                                    <div>
+                                        <h4 className="font-semibold text-red-700 dark:text-red-400">Cancelar Suscripción Premium</h4>
+                                        <p className="text-sm text-red-600/80 dark:text-red-400/70">
+                                            Perderás acceso a las funciones PRO al final del periodo actual.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        className="border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/50"
+                                        onClick={handleCancelSubscription}
+                                    >
+                                        Cancelar Suscripción
+                                    </Button>
+                                </div>
+                            )}
+
+                            <div className="flex items-center justify-between p-4 border border-red-100 dark:border-red-900/30 rounded-lg bg-red-50 dark:bg-red-900/10">
+                                <div>
+                                    <h4 className="font-semibold text-red-700 dark:text-red-400">Eliminar Cuenta</h4>
+                                    <p className="text-sm text-red-600/80 dark:text-red-400/70">
+                                        Esta acción es permanente y no se puede deshacer.
+                                    </p>
+                                </div>
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleDeleteAccount}
+                                >
+                                    Eliminar Cuenta
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { db } from "@/firebase"
-import { ref, onValue, update } from "firebase/database"
+import { ref, onValue, update, remove } from "firebase/database"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -26,7 +26,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Search, Shield, User, Crown } from "lucide-react"
+import { Search, Shield, User, Crown, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface UserData {
@@ -72,6 +72,8 @@ export default function AdminUsersPage() {
                             ...userData
                         }))
                         setUsers(usersList)
+                    } else {
+                        setUsers([])
                     }
                     setLoading(false)
                 })
@@ -90,6 +92,18 @@ export default function AdminUsersPage() {
         } catch (error) {
             console.error("Error updating role:", error)
             toast.error("Error al actualizar el rol")
+        }
+    }
+
+    const handleDeleteUser = async (uid: string, userName: string | undefined) => {
+        if (confirm(`¿Estás seguro de que quieres eliminar al usuario ${userName}? Esta acción borrará sus datos de la base de datos.`)) {
+            try {
+                await remove(ref(db, `users/${uid}`))
+                toast.success("Usuario eliminado correctamente")
+            } catch (error) {
+                console.error("Error deleting user:", error)
+                toast.error("Error al eliminar el usuario")
+            }
         }
     }
 
@@ -170,6 +184,14 @@ export default function AdminUsersPage() {
                                                         <SelectItem value="admin">Administrador</SelectItem>
                                                     </SelectContent>
                                                 </Select>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                    onClick={() => handleDeleteUser(userData.uid, userData.displayName)}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -179,6 +201,6 @@ export default function AdminUsersPage() {
                     </CardContent>
                 </Card>
             </main>
-        </div>
+        </div >
     )
 }
