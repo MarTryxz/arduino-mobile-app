@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { db } from "@/firebase"
 import { ref, update } from "firebase/database"
 import { toast } from "sonner"
+import jsPDF from "jspdf"
 
 interface SubscriptionModalProps {
     open: boolean
@@ -41,7 +42,66 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
     }
 
     const handleViewInvoices = () => {
-        toast.info("Esta función estará disponible pronto.")
+        try {
+            const doc = new jsPDF()
+
+            // Título
+            doc.setFontSize(20)
+            doc.text("Historial de Pagos - Arduino Mobile App", 20, 20)
+
+            // Información del usuario
+            doc.setFontSize(12)
+            doc.text(`Usuario: ${user?.email || 'Usuario'}`, 20, 35)
+            doc.text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 20, 42)
+
+            // Línea separadora
+            doc.line(20, 48, 190, 48)
+
+            // Cabecera de la tabla
+            doc.setFontSize(10)
+            doc.setFont("helvetica", "bold")
+            doc.text("Fecha", 20, 60)
+            doc.text("Descripción", 60, 60)
+            doc.text("Estado", 130, 60)
+            doc.text("Monto", 170, 60)
+
+            // Datos de ejemplo
+            const pagos = [
+                { fecha: "25/11/2025", desc: "Suscripción Premium Mensual", estado: "Completado", monto: "$9.99" },
+                { fecha: "25/10/2025", desc: "Suscripción Premium Mensual", estado: "Completado", monto: "$9.99" },
+                { fecha: "25/09/2025", desc: "Suscripción Premium Mensual", estado: "Completado", monto: "$9.99" },
+                { fecha: "25/08/2025", desc: "Suscripción Premium Mensual", estado: "Completado", monto: "$9.99" },
+            ]
+
+            doc.setFont("helvetica", "normal")
+            let y = 70
+            pagos.forEach(pago => {
+                doc.text(pago.fecha, 20, y)
+                doc.text(pago.desc, 60, y)
+                doc.text(pago.estado, 130, y)
+                doc.text(pago.monto, 170, y)
+                y += 10
+            })
+
+            // Información de contacto
+            doc.setFontSize(10)
+            doc.text("¿Preguntas o reclamos?", 20, 260)
+            doc.setFont("helvetica", "bold")
+            doc.text("Contacto: openrakiduamstudio@gmail.com", 20, 266)
+            doc.setFont("helvetica", "normal")
+
+            // Pie de página
+            doc.setFontSize(8)
+            doc.text("Este documento es un comprobante de pago generado automáticamente.", 20, 280)
+
+            // Descargar PDF
+            doc.save("historial_pagos.pdf")
+            toast.success("Historial de pagos descargado")
+
+        } catch (error) {
+            console.error("Error generating PDF:", error)
+            toast.error("Error al generar el PDF")
+        }
     }
 
     const handleChangeCard = () => {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Thermometer, Droplet, Wind, Activity } from "lucide-react"
+import { Thermometer, Droplet, Wind, Activity, Wifi, Clock, AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from '@/firebase'
 import { ref, onValue } from 'firebase/database'
@@ -15,6 +15,8 @@ interface Lecturas {
   tempAire: number
   humedadAire: number
   phVoltaje: number
+  rssi: number
+  uptime: number
 }
 
 export default function DashboardPage() {
@@ -53,6 +55,25 @@ export default function DashboardPage() {
   const calcularPH = (voltaje: number) => {
     const ph = 7 - (voltaje - 2.5) * 3.5
     return Math.max(0, Math.min(14, ph)).toFixed(1)
+  }
+
+  // Helper para calidad de señal RSSI
+  const getSignalQuality = (rssi: number) => {
+    if (rssi >= -60) return { text: 'Excelente', color: 'text-green-500', icon: Wifi }
+    if (rssi >= -80) return { text: 'Aceptable', color: 'text-yellow-500', icon: Wifi }
+    return { text: 'Muy mala', color: 'text-red-500', icon: AlertTriangle }
+  }
+
+  // Helper para formatear uptime
+  const formatUptime = (seconds: number) => {
+    const days = Math.floor(seconds / (3600 * 24))
+    const hours = Math.floor((seconds % (3600 * 24)) / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`
+    if (hours > 0) return `${hours}h ${minutes}m ${secs}s`
+    return `${minutes}m ${secs}s`
   }
 
   // Reloj de actualización ("hace X segundos")
@@ -181,15 +202,59 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Estado de conexión */}
-            <Card className="mt-6">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                  <span className="text-muted-foreground">Sistema conectado y recibiendo datos en tiempo real.</span>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Estado de conexión y Sistema */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+              {/* Estado General */}
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-muted-foreground">Sistema conectado y recibiendo datos.</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Detalles Técnicos (RSSI & Uptime) */}
+              <Card>
+                <CardContent className="pt-6 flex flex-col gap-3">
+                  {/* RSSI */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const quality = getSignalQuality(lecturas.rssi)
+                        const Icon = quality.icon
+                        return <Icon className={`h-4 w-4 ${quality.color}`} />
+                      })()}
+                      <span className="text-sm font-medium">Señal WiFi</span>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-sm font-bold ${getSignalQuality(lecturas.rssi).color}`}>
+                        {getSignalQuality(lecturas.rssi).text} ({lecturas.rssi} dBm)
+                      </span>
+                      {lecturas.rssi < -80 && (
+                        <p className="text-xs text-red-500">Riesgo de desconexión</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Uptime */}
+                  <div className="flex items-center justify-between border-t pt-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm font-medium">Tiempo Activo</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-sm font-bold">{formatUptime(lecturas.uptime)}</span>
+                      {lecturas.uptime < 60 && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
+                          Recién Reiniciado
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </>
         )}
       </main>
