@@ -151,50 +151,55 @@ export default function AdminUsersPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredUsers.map((userData) => (
-                                        <TableRow key={userData.uid}>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium">{userData.displayName}</span>
-                                                    <span className="text-sm text-gray-500">{userData.email}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={userData.role === 'admin' ? 'destructive' : userData.role === 'cliente_premium' ? 'default' : 'secondary'}
-                                                    className={userData.role === 'cliente_premium' ? 'bg-amber-500 hover:bg-amber-600' : ''}
-                                                >
-                                                    {userData.role === 'admin' && <Shield className="w-3 h-3 mr-1" />}
-                                                    {userData.role === 'cliente_premium' && <Crown className="w-3 h-3 mr-1" />}
-                                                    {userData.role === 'cliente' && <User className="w-3 h-3 mr-1" />}
-                                                    {userData.role === 'admin' ? 'Administrador' : userData.role === 'cliente_premium' ? 'Premium' : 'Cliente'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Select
-                                                    defaultValue={userData.role}
-                                                    onValueChange={(value) => handleRoleChange(userData.uid, value)}
-                                                >
-                                                    <SelectTrigger className="w-[180px]">
-                                                        <SelectValue placeholder="Seleccionar rol" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="cliente">Cliente</SelectItem>
-                                                        <SelectItem value="cliente_premium">Premium</SelectItem>
-                                                        <SelectItem value="admin">Administrador</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                    onClick={() => handleDeleteUser(userData.uid, userData.displayName)}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {filteredUsers.map((userData) => {
+                                        const isCurrentUser = user?.uid === userData.uid
+                                        return (
+                                            <TableRow key={userData.uid}>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium">{userData.displayName}</span>
+                                                        <span className="text-sm text-gray-500">{userData.email}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={userData.role === 'admin' ? 'destructive' : userData.role === 'cliente_premium' ? 'default' : 'secondary'}
+                                                        className={userData.role === 'cliente_premium' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+                                                    >
+                                                        {userData.role === 'admin' && <Shield className="w-3 h-3 mr-1" />}
+                                                        {userData.role === 'cliente_premium' && <Crown className="w-3 h-3 mr-1" />}
+                                                        {userData.role === 'cliente' && <User className="w-3 h-3 mr-1" />}
+                                                        {userData.role === 'admin' ? 'Administrador' : userData.role === 'cliente_premium' ? 'Premium' : 'Cliente'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Select
+                                                        defaultValue={userData.role}
+                                                        onValueChange={(value) => handleRoleChange(userData.uid, value)}
+                                                        disabled={isCurrentUser}
+                                                    >
+                                                        <SelectTrigger className="w-[180px]">
+                                                            <SelectValue placeholder="Seleccionar rol" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="cliente">Cliente</SelectItem>
+                                                            <SelectItem value="cliente_premium">Premium</SelectItem>
+                                                            <SelectItem value="admin">Administrador</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className={`ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 ${isCurrentUser ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        onClick={() => handleDeleteUser(userData.uid, userData.displayName)}
+                                                        disabled={isCurrentUser}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
                                 </TableBody>
                             </Table>
                         </div>
