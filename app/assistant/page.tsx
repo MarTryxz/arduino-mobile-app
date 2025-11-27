@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Bot, Send, User, Sparkles, RefreshCw, Trash2 } from "lucide-react"
 import { sendMessageToGemini } from "@/app/actions/chat"
+import { PremiumModal } from "@/components/premium-modal"
+import ReactMarkdown from 'react-markdown'
 
 interface Message {
     id: string
@@ -28,6 +30,8 @@ export default function AssistantPage() {
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
+    const [showPremiumModal, setShowPremiumModal] = useState(false)
+    const [roleLoading, setRoleLoading] = useState(true)
     const scrollRef = useRef<HTMLDivElement>(null)
 
     // Redirigir si no hay usuario
@@ -36,6 +40,22 @@ export default function AssistantPage() {
             router.push('/login')
         }
     }, [user, loading, router])
+
+    // Verificar rol del usuario
+    useEffect(() => {
+        if (!user) return
+
+        const roleRef = ref(db, `users/${user.uid}/role`)
+        const unsubscribe = onValue(roleRef, (snapshot) => {
+            const role = snapshot.val()
+            if (role === 'cliente') {
+                setShowPremiumModal(true)
+            }
+            setRoleLoading(false)
+        })
+
+        return () => unsubscribe()
+    }, [user])
 
     // Cargar datos de sensores
     useEffect(() => {
@@ -177,7 +197,14 @@ export default function AssistantPage() {
         }
     }
 
-    if (loading) {
+    const handleModalOpenChange = (open: boolean) => {
+        if (!open) {
+            router.push('/dashboard')
+        }
+        setShowPremiumModal(open)
+    }
+
+    if (loading || roleLoading) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -187,9 +214,10 @@ export default function AssistantPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300 flex flex-col">
+            <PremiumModal open={showPremiumModal} onOpenChange={handleModalOpenChange} />
             <DashboardHeader title="Asistente IA" />
 
-            <main className="flex-1 container mx-auto px-4 py-6 flex flex-col max-h-[calc(100vh-64px)]">
+            <main className={`flex-1 container mx-auto px-4 py-6 flex flex-col max-h-[calc(100vh-64px)] ${showPremiumModal ? 'blur-sm pointer-events-none' : ''}`}>
                 <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-800">
 
                     {/* Header del chat */}
@@ -244,8 +272,18 @@ export default function AssistantPage() {
                                             : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200 rounded-bl-none border border-gray-200 dark:border-gray-700'
                                             }`}
                                     >
-                                        <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                                            {msg.text}
+                                        <div className="text-sm leading-relaxed">
+                                            <ReactMarkdown
+                                                components={{
+                                                    p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
+                                                    ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2" {...props} />,
+                                                    ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2" {...props} />,
+                                                    li: ({ node, ...props }) => <li className="mb-0.5" {...props} />,
+                                                    strong: ({ node, ...props }) => <strong className="font-bold" {...props} />,
+                                                }}
+                                            >
+                                                {msg.text}
+                                            </ReactMarkdown>
                                         </div>
                                         <p className={`text-[10px] mt-1 opacity-70 text-right ${msg.role === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
                                             {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -288,7 +326,7 @@ export default function AssistantPage() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder="Escribe tu pregunta sobre la piscina..."
-                                className="flex-1 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-gray-700 focus-visible:ring-blue-500"
+                                className="flex-1 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-gray-700 focus-visible:ring-blue-500 text-gray-900 dark:text-gray-100"
                                 disabled={isTyping}
                             />
 

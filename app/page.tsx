@@ -104,9 +104,9 @@ export default function HomePage() {
           </div>
           {/* Navbar escritorio */}
           <nav className="space-x-6 hidden md:flex items-center">
-            <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Características</a>
-            <a href="#quienes-somos" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">¿Quiénes somos?</a>
-            <a href="#contacto" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Contacto</a>
+            <a href="#features" className="text-gray-600 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Características</a>
+            <a href="#quienes-somos" className="text-gray-600 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">¿Quiénes somos?</a>
+            <a href="#contacto" className="text-gray-600 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Contacto</a>
             <div className="flex gap-3 items-center">
               <ThemeToggle />
               <SignInPersonalizado />

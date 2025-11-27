@@ -84,6 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (userCredential.user) {
         await set(ref(db, `users/${userCredential.user.uid}`), {
           role: 'cliente',
+          email: email,
+          displayName: displayName || '',
           lastName: displayName || ''
         })
       }
@@ -123,6 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (additionalUserInfo?.isNewUser && result.user) {
         await set(ref(db, `users/${result.user.uid}`), {
           role: 'cliente',
+          email: result.user.email,
+          displayName: result.user.displayName || '',
           lastName: result.user.displayName || ''
         })
       }
@@ -154,6 +158,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (additionalUserInfo?.isNewUser && result.user) {
         await set(ref(db, `users/${result.user.uid}`), {
           role: 'cliente',
+          email: result.user.email,
+          displayName: result.user.displayName || '',
           lastName: result.user.displayName || ''
         })
       }

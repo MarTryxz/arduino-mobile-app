@@ -4,12 +4,16 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { db } from '@/firebase'
+import { ref, onValue } from 'firebase/database'
+import { Crown } from 'lucide-react'
 
 export function UserButton() {
   const { user, logOut } = useAuth()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const [role, setRole] = useState<string | null>(null)
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -22,6 +26,18 @@ export function UserButton() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Fetch user role
+  useEffect(() => {
+    if (!user) return
+
+    const roleRef = ref(db, `users/${user.uid}/role`)
+    const unsubscribe = onValue(roleRef, (snapshot) => {
+      setRole(snapshot.val())
+    })
+
+    return () => unsubscribe()
+  }, [user])
 
   const handleLogout = async () => {
     try {
@@ -47,15 +63,29 @@ export function UserButton() {
     return user.email?.[0]?.toUpperCase() || 'U'
   }
 
+  const isPro = role === 'cliente_premium'
+  const isAdmin = role === 'admin'
+  const showBadge = isPro || isAdmin
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Avatar button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+        className="flex items-center space-x-2 p-2 rounded-full hover:bg-white/10 transition relative group"
         aria-label="Menú de usuario"
       >
-        <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+        {showBadge && (
+          <div className={`absolute -top-1 -right-1 z-10 rounded-full p-1 shadow-sm border border-white dark:border-slate-900 ${isAdmin ? 'bg-red-600' : 'bg-gradient-to-r from-amber-400 to-orange-500'}`}>
+            <Crown className="w-3 h-3 text-white fill-white" />
+          </div>
+        )}
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold shadow-md transition-all duration-300 ${showBadge
+          ? isAdmin
+            ? 'bg-gradient-to-br from-red-800 to-red-900 text-white border-2 border-red-500/50'
+            : 'bg-gradient-to-br from-slate-800 to-slate-900 text-amber-400 border-2 border-amber-500/50'
+          : 'bg-blue-600 text-white'
+          }`}>
           {getInitials()}
         </div>
       </button>
@@ -65,9 +95,17 @@ export function UserButton() {
         <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50 animate-fade-in">
           {/* User info */}
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              {user.displayName || 'Usuario'}
-            </p>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {user.displayName || 'Usuario'}
+              </p>
+              {showBadge && (
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold text-white shadow-sm flex items-center gap-1 ${isAdmin ? 'bg-red-600' : 'bg-gradient-to-r from-amber-400 to-orange-500'}`}>
+                  <Crown className="w-3 h-3 fill-white" />
+                  {isAdmin ? 'ADMIN' : 'PRO'}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
               {user.email}
             </p>
@@ -113,6 +151,21 @@ export function UserButton() {
                 Información
               </div>
             </Link>
+
+            {isAdmin && (
+              <Link
+                href="/admin/users"
+                onClick={() => setIsOpen(false)}
+                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              >
+                <div className="flex items-center text-red-600 dark:text-red-400 font-medium">
+                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  Administrar Usuarios
+                </div>
+              </Link>
+            )}
           </div>
 
           {/* Logout */}
