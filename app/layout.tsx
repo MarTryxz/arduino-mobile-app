@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   description: 'Arduino based aquaponics monitoring system',
 }
 
+
+import { Toaster } from "@/components/ui/toaster"
+import { AlertMonitor } from "@/components/AlertMonitor"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,7 +29,9 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
+            <AlertMonitor />
             {children}
+            <Toaster />
           </AuthProvider>
         </ThemeProvider>
       </body>

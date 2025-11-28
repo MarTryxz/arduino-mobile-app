@@ -5,10 +5,9 @@ import { Thermometer, Droplet, Wind, Activity, Wifi, Clock, AlertTriangle } from
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from '@/firebase'
 import { ref, onValue } from 'firebase/database'
-
-// Asegúrate de que la ruta de importación sea correcta según tu estructura
 import { DashboardHeader } from "@/components/dashboard-header"
 import PoolScene from "@/components/PoolScene"
+import { SENSOR_RANGES } from "@/constants/ranges"
 
 interface Lecturas {
   tempAgua: number
@@ -24,11 +23,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
-
-  // Estado para controlar la animación 3D
   const [sensorActivo, setSensorActivo] = useState<string | null>(null)
 
-  // Conectar a Firebase
   useEffect(() => {
     const lecturasRef = ref(db, 'sensor_status/actual')
     const unsubscribe = onValue(lecturasRef, (snapshot) => {
@@ -51,20 +47,17 @@ export default function DashboardPage() {
     return () => unsubscribe()
   }, [])
 
-  // Calcular pH
   const calcularPH = (voltaje: number) => {
     const ph = 7 - (voltaje - 2.5) * 3.5
     return Math.max(0, Math.min(14, ph)).toFixed(1)
   }
 
-  // Helper para calidad de señal RSSI
   const getSignalQuality = (rssi: number) => {
     if (rssi >= -60) return { text: 'Excelente', color: 'text-green-500', icon: Wifi }
     if (rssi >= -80) return { text: 'Aceptable', color: 'text-yellow-500', icon: Wifi }
     return { text: 'Muy mala', color: 'text-red-500', icon: AlertTriangle }
   }
 
-  // Helper para formatear uptime
   const formatUptime = (seconds: number) => {
     const days = Math.floor(seconds / (3600 * 24))
     const hours = Math.floor((seconds % (3600 * 24)) / 3600)
@@ -76,7 +69,6 @@ export default function DashboardPage() {
     return `${minutes}m ${secs}s`
   }
 
-  // Reloj de actualización ("hace X segundos")
   const [, setTick] = useState(0)
   useEffect(() => {
     const interval = setInterval(() => setTick(prev => prev + 1), 1000)
@@ -91,10 +83,8 @@ export default function DashboardPage() {
     return `Actualizado hace ${minutos} minuto${minutos > 1 ? 's' : ''}`
   }
 
-  // Manejador del click para la animación
   const handleCardClick = (sensor: string) => {
     setSensorActivo(sensor)
-    // Resetea a null después de 1.5 segundos para que la cámara "vuelva"
     setTimeout(() => setSensorActivo(null), 1500)
   }
 
@@ -123,72 +113,71 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* COLUMNA IZQUIERDA: Tarjetas */}
               <div className="lg:col-span-1 flex flex-col gap-4">
 
-                {/* TARJETA TEMP AGUA */}
+                {/* TEMP AGUA */}
                 <div onClick={() => handleCardClick('tempAgua')} className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-95">
                   <Card className={sensorActivo === 'tempAgua' ? 'ring-2 ring-blue-500' : ''}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base font-medium flex items-center">
-                        <Droplet className="h-4 w-4 mr-2 text-blue-500" /> Temperatura del Agua
+                        <Droplet className="h-4 w-4 mr-2 text-blue-500" /> {SENSOR_RANGES.tempAgua.label}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold">{lecturas.tempAgua.toFixed(1)}°C</div>
+                      <div className="text-3xl font-bold">{lecturas.tempAgua.toFixed(1)}{SENSOR_RANGES.tempAgua.unit}</div>
                       <p className="text-sm text-muted-foreground">
-                        {lecturas.tempAgua < 18 ? '❄️ Fría' : lecturas.tempAgua > 28 ? '🔥 Caliente' : '✅ Óptima'}
+                        {lecturas.tempAgua < SENSOR_RANGES.tempAgua.min ? '❄️ Fría' : lecturas.tempAgua > SENSOR_RANGES.tempAgua.max ? '🔥 Caliente' : '✅ Óptima'}
                       </p>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* TARJETA TEMP AIRE */}
+                {/* TEMP AIRE */}
                 <div onClick={() => handleCardClick('tempAire')} className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-95">
                   <Card className={sensorActivo === 'tempAire' ? 'ring-2 ring-orange-500' : ''}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base font-medium flex items-center">
-                        <Thermometer className="h-4 w-4 mr-2 text-orange-500" /> Temperatura del Aire
+                        <Thermometer className="h-4 w-4 mr-2 text-orange-500" /> {SENSOR_RANGES.tempAire.label}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold">{lecturas.tempAire.toFixed(1)}°C</div>
+                      <div className="text-3xl font-bold">{lecturas.tempAire.toFixed(1)}{SENSOR_RANGES.tempAire.unit}</div>
                       <p className="text-sm text-muted-foreground">
-                        {lecturas.tempAire < 15 ? '❄️ Frío' : '✅ Agradable'}
+                        {lecturas.tempAire < SENSOR_RANGES.tempAire.min ? '❄️ Frío' : '✅ Agradable'}
                       </p>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* TARJETA HUMEDAD */}
+                {/* HUMEDAD */}
                 <div onClick={() => handleCardClick('humedadAire')} className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-95">
                   <Card className={sensorActivo === 'humedadAire' ? 'ring-2 ring-cyan-500' : ''}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base font-medium flex items-center">
-                        <Wind className="h-4 w-4 mr-2 text-cyan-500" /> Humedad del Aire
+                        <Wind className="h-4 w-4 mr-2 text-cyan-500" /> {SENSOR_RANGES.humedadAire.label}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold">{lecturas.humedadAire.toFixed(1)}%</div>
+                      <div className="text-3xl font-bold">{lecturas.humedadAire.toFixed(1)}{SENSOR_RANGES.humedadAire.unit}</div>
                       <p className="text-sm text-muted-foreground">
-                        {lecturas.humedadAire > 70 ? '💧 Húmedo' : '✅ Normal'}
+                        {lecturas.humedadAire > SENSOR_RANGES.humedadAire.max ? '💧 Húmedo' : '✅ Normal'}
                       </p>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* TARJETA PH */}
+                {/* PH */}
                 <div onClick={() => handleCardClick('ph')} className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-95">
                   <Card className={sensorActivo === 'ph' ? 'ring-2 ring-green-500' : ''}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base font-medium flex items-center">
-                        <Activity className="h-4 w-4 mr-2 text-green-500" /> Nivel de pH
+                        <Activity className="h-4 w-4 mr-2 text-green-500" /> {SENSOR_RANGES.ph.label}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="text-3xl font-bold">{calcularPH(lecturas.phVoltaje)}</div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {parseFloat(calcularPH(lecturas.phVoltaje)) < 7.0 ? '🔴 Ácido' : '✅ Neutro'}
+                        {parseFloat(calcularPH(lecturas.phVoltaje)) < SENSOR_RANGES.ph.min ? '🔴 Ácido' : '✅ Neutro'}
                       </p>
                     </CardContent>
                   </Card>
@@ -196,15 +185,12 @@ export default function DashboardPage() {
 
               </div>
 
-              {/* COLUMNA DERECHA: Escena 3D */}
               <div className="lg:col-span-2 h-[500px] lg:h-auto">
                 <PoolScene sensorActivo={sensorActivo} temperatura={lecturas.tempAgua} />
               </div>
             </div>
 
-            {/* Estado de conexión y Sistema */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-              {/* Estado General */}
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-2 text-sm">
@@ -214,10 +200,8 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Detalles Técnicos (RSSI & Uptime) */}
               <Card>
                 <CardContent className="pt-6 flex flex-col gap-3">
-                  {/* RSSI */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {(() => {
@@ -237,7 +221,6 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Uptime */}
                   <div className="flex items-center justify-between border-t pt-3">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-blue-500" />
