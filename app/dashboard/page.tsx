@@ -6,8 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from '@/firebase'
 import { ref, onValue } from 'firebase/database'
 import { DashboardHeader } from "@/components/dashboard-header"
-import PoolScene from "@/components/PoolScene"
 import { SENSOR_RANGES } from "@/constants/ranges"
+import dynamic from 'next/dynamic'
+
+const PoolScene = dynamic(() => import("@/components/PoolScene"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[400px] lg:h-full min-h-[400px] bg-slate-900 rounded-xl overflow-hidden relative border border-slate-800 shadow-inner flex items-center justify-center text-slate-500">
+      <div className="animate-pulse">Cargando 3D...</div>
+    </div>
+  ),
+})
 
 interface Lecturas {
   tempAgua: number
