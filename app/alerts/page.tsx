@@ -1,45 +1,70 @@
 "use client"
 
-import { AlertTriangle, Thermometer, Wifi, Battery, Bell } from "lucide-react"
+import { useState, useEffect } from "react"
+import { AlertTriangle, Thermometer, Wifi, Battery, Bell, Droplet, Wind, Activity } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
-
-// Datos simulados para las alertas
-const alerts = [
-  {
-    id: 1,
-    type: "temperature",
-    message: "Temperatura fuera de rango: 32.5°C",
-    date: "01/05/2025",
-    time: "14:32",
-    icon: Thermometer,
-    color: "text-red-500",
-    bgColor: "bg-red-100",
-  },
-  {
-    id: 2,
-    type: "wifi",
-    message: "Conexión Wi-Fi perdida",
-    date: "30/04/2025",
-    time: "18:45",
-    icon: Wifi,
-    color: "text-orange-500",
-    bgColor: "bg-orange-100",
-  },
-  {
-    id: 3,
-    type: "battery",
-    message: "Batería baja: 15%",
-    date: "29/04/2025",
-    time: "09:12",
-    icon: Battery,
-    color: "text-yellow-500",
-    bgColor: "bg-yellow-100",
-  },
-]
-
 import { DashboardHeader } from "@/components/dashboard-header"
+import { db } from '@/firebase'
+import { ref, onValue, query, orderByChild, limitToLast } from 'firebase/database'
+
+interface Alert {
+  id: string
+  type: string
+  message: string
+  value: number
+  timestamp: number
+  read: boolean
+}
 
 export default function AlertsPage() {
+  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const alertsRef = query(ref(db, 'alerts'), orderByChild('timestamp'), limitToLast(50))
+
+    const unsubscribe = onValue(alertsRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        const alertsList = Object.entries(data).map(([key, value]: [string, any]) => ({
+          id: key,
+          ...value,
+        })).sort((a, b) => b.timestamp - a.timestamp) // Sort descending
+        setAlerts(alertsList)
+      } else {
+        setAlerts([])
+      }
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'tempAgua':
+        return Droplet
+      case 'tempAire':
+        return Thermometer
+      case 'humedadAire':
+        return Wind
+      case 'ph':
+        return Activity
+      case 'rssi':
+        return Wifi
+      default:
+        return AlertTriangle
+    }
+  }
+
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp)
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
       <DashboardHeader title="Alertas" />
@@ -50,37 +75,34 @@ export default function AlertsPage() {
           <h2 className="text-lg font-medium text-foreground">Alertas recientes</h2>
         </div>
 
-        {alerts.length > 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
+          </div>
+        ) : alerts.length > 0 ? (
           <div className="space-y-4">
-            {alerts.map((alert) => (
-              <Card key={alert.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    {alert.type === "temperature" && (
-                      <div className={`p-2 rounded-full bg-app-red/20`}>
-                        <alert.icon className={`h-5 w-5 text-app-red`} />
+            {alerts.map((alert) => {
+              const Icon = getIcon(alert.type)
+              const { date, time } = formatDate(alert.timestamp)
+
+              return (
+                <Card key={alert.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-full bg-red-100 dark:bg-red-900/20`}>
+                        <Icon className={`h-5 w-5 text-red-500`} />
                       </div>
-                    )}
-                    {alert.type === "wifi" && (
-                      <div className={`p-2 rounded-full bg-app-red/20`}>
-                        <alert.icon className={`h-5 w-5 text-app-red`} />
-                      </div>
-                    )}
-                    {alert.type === "battery" && (
-                      <div className={`p-2 rounded-full bg-app-red/20`}>
-                        <alert.icon className={`h-5 w-5 text-app-red`} />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <div className="font-medium text-foreground">{alert.message}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {alert.date} • {alert.time}
+                      <div className="flex-1">
+                        <div className="font-medium text-foreground">{alert.message}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {date} • {time}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         ) : (
           <div className="text-center py-12">

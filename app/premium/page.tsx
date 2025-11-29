@@ -67,9 +67,9 @@ export default function PremiumPage() {
                         </CardHeader>
                         <CardContent className="flex-1">
                             <div className="mb-6">
-                                <span className="text-4xl font-bold text-gray-900 dark:text-white">$10.000</span>
+                                <span className="text-4xl font-bold text-gray-900 dark:text-white">$12.000</span>
                                 <span className="text-gray-500 dark:text-gray-400 ml-2">/ mes</span>
-                                <p className="text-sm text-green-600 font-medium mt-1">Facturado $120.000 anualmente</p>
+                                <p className="text-sm text-green-600 font-medium mt-1">Facturado $144.000 anualmente</p>
                             </div>
                             <ul className="space-y-3">
                                 {[
