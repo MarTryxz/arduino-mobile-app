@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { db } from '@/firebase'
 import { ref, onValue } from 'firebase/database'
-import { Crown } from 'lucide-react'
+import { Crown, Shield } from 'lucide-react'
+import { PremiumModal } from '@/components/premium-modal'
+import { SubscriptionModal } from '@/components/subscription-modal'
 
 export function UserButton() {
   const { user, logOut } = useAuth()
@@ -14,6 +16,8 @@ export function UserButton() {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [role, setRole] = useState<string | null>(null)
+  const [showPremiumModal, setShowPremiumModal] = useState(false)
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -126,31 +130,36 @@ export function UserButton() {
               </div>
             </Link>
 
-            <Link
-              href="/dashboard"
-              onClick={() => setIsOpen(false)}
-              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-            >
-              <div className="flex items-center">
-                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                Dashboard
-              </div>
-            </Link>
-
-            <Link
-              href="/info/terms"
-              onClick={() => setIsOpen(false)}
-              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-            >
-              <div className="flex items-center">
-                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Información
-              </div>
-            </Link>
+            {/* Subscription Management */}
+            {!isPro && !isAdmin ? (
+              <button
+                onClick={() => {
+                  setIsOpen(false)
+                  setShowPremiumModal(true)
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              >
+                <div className="flex items-center">
+                  <Crown className="w-4 h-4 mr-3 text-amber-500" />
+                  Obtener Premium
+                </div>
+              </button>
+            ) : (
+              !isAdmin && (
+                <button
+                  onClick={() => {
+                    setIsOpen(false)
+                    setShowSubscriptionModal(true)
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                >
+                  <div className="flex items-center">
+                    <Crown className="w-4 h-4 mr-3 text-amber-500" />
+                    Gestionar Suscripción
+                  </div>
+                </button>
+              )
+            )}
 
             {isAdmin && (
               <Link
@@ -184,6 +193,8 @@ export function UserButton() {
           </div>
         </div>
       )}
+      <PremiumModal open={showPremiumModal} onOpenChange={setShowPremiumModal} />
+      <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
     </div>
   )
 }
