@@ -12,7 +12,7 @@ import { ref, onValue } from "firebase/database"
 
 import { useState, useEffect } from "react"
 import { PremiumModal } from "@/components/premium-modal"
-import { SubscriptionModal } from "@/components/subscription-modal"
+
 
 interface DashboardHeaderProps {
     title: string
@@ -21,7 +21,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ title }: DashboardHeaderProps) {
     const { user } = useAuth()
     const [showPremiumModal, setShowPremiumModal] = useState(false)
-    const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+
     const [role, setRole] = useState<string | null>(null)
 
     useEffect(() => {
@@ -60,21 +60,13 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                                 <SheetTitle>Menú de navegación</SheetTitle>
                             </SheetHeader>
                             <nav className="flex flex-col gap-4 mt-8">
-                                {!hasProPlan ? (
+                                {!hasProPlan && (
                                     <div
                                         onClick={() => setShowPremiumModal(true)}
                                         className="flex items-center gap-2 py-3 px-4 font-bold text-white bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 mb-2 cursor-pointer"
                                     >
                                         <Crown className="h-5 w-5 fill-current" />
                                         Obtener Premium
-                                    </div>
-                                ) : (
-                                    <div
-                                        onClick={() => isAdmin ? null : setShowSubscriptionModal(true)}
-                                        className={`flex items-center gap-2 py-3 px-4 font-bold text-white rounded-lg shadow-md mb-2 ${isAdmin ? 'bg-gradient-to-r from-red-600 to-red-800 cursor-default' : 'bg-gradient-to-r from-amber-500 to-orange-600 cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300'}`}
-                                    >
-                                        {isAdmin ? <Shield className="h-5 w-5 fill-current" /> : <Crown className="h-5 w-5 fill-current" />}
-                                        {isAdmin ? 'Administrador' : 'Gestionar Suscripción'}
                                     </div>
                                 )}
                                 <Link href="/dashboard" className="flex items-center gap-2 py-2 font-medium text-gray-700 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
@@ -98,10 +90,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                                     Asistente IA
                                     <Crown className="h-3 w-3 ml-1 text-amber-500 fill-amber-500" />
                                 </Link>
-                                <Link href="/profile" className="flex items-center gap-2 py-2 font-medium text-gray-700 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                    <User className="h-5 w-5" />
-                                    Mi Perfil
-                                </Link>
+
                                 {isAdmin && (
                                     <Link href="/admin/users" className="flex items-center gap-2 py-2 font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
                                         <Shield className="h-5 w-5" />
@@ -120,7 +109,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                 </div>
             </div>
             <PremiumModal open={showPremiumModal} onOpenChange={setShowPremiumModal} />
-            <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
-        </header>
+
+        </header >
     )
 }
