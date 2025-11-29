@@ -26,6 +26,8 @@ export default function HomePage() {
   }, [loading, user, router])
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const carouselRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -53,15 +55,18 @@ export default function HomePage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setIsSubmitting(true)
     const form = e.currentTarget
     const formData = new FormData(form)
     const result = await sendEmail(formData)
 
+    setIsSubmitting(false)
     if (result.error) {
       toast.error(result.error)
     } else {
       toast.success('Mensaje enviado correctamente')
       form.reset()
+      setIsSuccess(true)
     }
   }
 
@@ -268,44 +273,75 @@ export default function HomePage() {
         <div className="max-w-2xl mx-auto px-4 text-center">
           <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">Contacto</h3>
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-12">¿Tienes preguntas? Nos encantaría escucharte</p>
-          <form
-            onSubmit={handleSubmit}
-            className="max-w-lg mx-auto space-y-4"
-          >
-            <div>
-              <input
-                type="text"
-                name="name"
-                required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Nombre"
-              />
+          {isSuccess ? (
+            <div className="max-w-lg mx-auto bg-white dark:bg-slate-800 rounded-2xl p-8 text-center shadow-lg border border-green-100 dark:border-green-900/30 animate-in fade-in zoom-in duration-300">
+              <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">¡Mensaje Enviado!</h4>
+              <p className="text-gray-600 dark:text-gray-300 mb-8">
+                Gracias por contactarnos. Hemos recibido tu mensaje y te responderemos a la brevedad.
+              </p>
+              <button
+                onClick={() => setIsSuccess(false)}
+                className="bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-900 dark:text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-300"
+              >
+                Enviar otro mensaje
+              </button>
             </div>
-            <div>
-              <input
-                type="email"
-                name="email"
-                required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Correo electrónico"
-              />
-            </div>
-            <div>
-              <textarea
-                name="message"
-                required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                rows={4}
-                placeholder="Mensaje"
-              ></textarea>
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="max-w-lg mx-auto space-y-4"
             >
-              Enviar Mensaje
-            </button>
-          </form>
+              <div>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="Nombre"
+                />
+              </div>
+              <div>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="Correo electrónico"
+                />
+              </div>
+              <div>
+                <textarea
+                  name="message"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  rows={4}
+                  placeholder="Mensaje"
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-blue-400 disabled:to-cyan-400 disabled:cursor-not-allowed text-white font-bold px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Enviando...
+                  </span>
+                ) : (
+                  'Enviar Mensaje'
+                )}
+              </button>
+            </form>
+          )}
         </div>
       </section>
 
