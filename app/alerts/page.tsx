@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AlertTriangle, Thermometer, Wifi, Battery, Bell, Droplet, Wind, Activity, Settings } from "lucide-react"
+import { AlertTriangle, Thermometer, Wifi, Battery, Bell, Droplet, Wind, Activity, Settings, Trash2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { db } from '@/firebase'
-import { ref, onValue, query, orderByChild, limitToLast } from 'firebase/database'
+import { ref, onValue, query, orderByChild, limitToLast, remove } from 'firebase/database'
+import { toast } from "sonner"
 
 interface Alert {
   id: string
@@ -41,6 +42,18 @@ export default function AlertsPage() {
 
     return () => unsubscribe()
   }, [])
+
+  const handleClearAlerts = async () => {
+    if (confirm('¿Estás seguro de que quieres borrar todas las alertas?')) {
+      try {
+        await remove(ref(db, 'alerts'))
+        toast.success('Alertas borradas correctamente')
+      } catch (error) {
+        console.error('Error clearing alerts:', error)
+        toast.error('Error al borrar las alertas')
+      }
+    }
+  }
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -77,12 +90,25 @@ export default function AlertsPage() {
             <AlertTriangle className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-medium text-foreground">Alertas recientes</h2>
           </div>
-          <Link href="/alerts/settings">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Settings className="h-4 w-4" />
-              Configuración
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {alerts.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-2"
+                onClick={handleClearAlerts}
+              >
+                <Trash2 className="h-4 w-4" />
+                Borrar todo
+              </Button>
+            )}
+            <Link href="/alerts/settings">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Settings className="h-4 w-4" />
+                Configuración
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {loading ? (

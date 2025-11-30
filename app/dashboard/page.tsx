@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { SwimAnalysis } from "@/components/swim-analysis"
 import { ShareDashboardModal } from "@/components/share-dashboard-modal"
 import { ChemicalWizard } from "@/components/chemical-wizard"
+import { FiltrationOptimizer } from "@/components/filtration-optimizer"
 import dynamic from 'next/dynamic'
 
 const PoolScene = dynamic(() => import("@/components/PoolScene"), {
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const [currentRanges, setCurrentRanges] = useState(SENSOR_RANGES)
   const [role, setRole] = useState<string | null>(null)
   const [poolVolume, setPoolVolume] = useState<number | null>(null)
+  const [pumpFlowRate, setPumpFlowRate] = useState<number | null>(null)
 
   // Fetch user settings and role
   useEffect(() => {
@@ -54,6 +56,9 @@ export default function DashboardPage() {
         setRole(userData.role)
         if (userData.poolVolume) {
           setPoolVolume(parseFloat(userData.poolVolume))
+        }
+        if (userData.pumpFlowRate) {
+          setPumpFlowRate(parseFloat(userData.pumpFlowRate))
         }
 
         const isPremium = userData.role === 'cliente_premium' || userData.role === 'admin'
@@ -304,6 +309,9 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-blue-500" />
                       <span className="text-sm font-medium">Tiempo Activo</span>
+                      {(role === 'cliente_premium' || role === 'admin') && (
+                        <FiltrationOptimizer poolVolume={poolVolume} pumpFlowRate={pumpFlowRate} />
+                      )}
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-sm font-bold">{formatUptime(lecturas.uptime)}</span>
