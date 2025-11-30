@@ -161,12 +161,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center text-red-600">
-            {error}
-          </div>
-        )}
-
         {!loading && !error && lecturas && (
           <>
             <div className="flex items-center justify-between">
@@ -174,10 +168,9 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground">{tiempoTranscurrido()}</p>
             </div>
 
-            {/* Smart Swim Analysis (Premium Only) */}
-            {(role === 'cliente_premium' || role === 'admin') && (
+            {(role === 'cliente_premium' || role === 'admin') && user && (
               <div className="mb-6">
-                <SwimAnalysis waterTemp={lecturas.tempAgua} />
+                <SwimAnalysis waterTemp={lecturas.tempAgua} user={user} />
               </div>
             )}
 
@@ -257,7 +250,7 @@ export default function DashboardPage() {
               <div className="lg:col-span-2 h-[500px] lg:h-auto">
                 <PoolScene sensorActivo={sensorActivo} temperatura={lecturas.tempAgua} />
               </div>
-            </div>
+            </div >
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
               <Card>
@@ -271,6 +264,7 @@ export default function DashboardPage() {
 
               <Card>
                 <CardContent className="pt-6 flex flex-col gap-3">
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {(() => {
@@ -309,7 +303,8 @@ export default function DashboardPage() {
             </div>
           </>
         )}
-      </main>
-    </div>
+
+      </main >
+    </div >
   )
 }
