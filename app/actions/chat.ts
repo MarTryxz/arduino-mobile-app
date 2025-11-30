@@ -10,17 +10,20 @@ export async function sendMessageToGemini(message: string, contextData: any) {
             return { error: 'API Key no configurada' }
         }
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' })
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
         const systemPrompt = `
       Eres un asistente inteligente experto en mantenimiento de piscinas llamado "AquaGuard AI".
       Tu objetivo es ayudar al usuario a mantener su piscina en óptimas condiciones basándote en los datos de los sensores.
       
       Datos actuales de la piscina:
-      ${JSON.stringify(contextData, null, 2)}
+      ${JSON.stringify(contextData.current || contextData, null, 2)}
+
+      Datos históricos (últimas lecturas):
+      ${contextData.history ? JSON.stringify(contextData.history, null, 2) : 'No hay datos históricos disponibles.'}
       
       Instrucciones:
-      1. Analiza los datos proporcionados (pH, temperatura, humedad).
+      1. Analiza los datos actuales y, si están disponibles, los datos históricos para identificar tendencias (subida/bajada de temperatura o pH).
       2. Si se te pide un reporte, da un resumen del estado actual y recomendaciones específicas si algo está fuera de rango.
       3. Rangos ideales:
          - pH: 7.2 - 7.6
