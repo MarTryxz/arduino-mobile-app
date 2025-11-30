@@ -10,6 +10,8 @@ import { SENSOR_RANGES } from "@/constants/ranges"
 import { useAuth } from "@/contexts/AuthContext"
 import { SwimAnalysis } from "@/components/swim-analysis"
 import { ShareDashboardModal } from "@/components/share-dashboard-modal"
+import { ChemicalWizard } from "@/components/chemical-wizard"
+import { FiltrationOptimizer } from "@/components/filtration-optimizer"
 import dynamic from 'next/dynamic'
 
 const PoolScene = dynamic(() => import("@/components/PoolScene"), {
@@ -40,42 +42,53 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const [currentRanges, setCurrentRanges] = useState(SENSOR_RANGES)
   const [role, setRole] = useState<string | null>(null)
+  const [poolVolume, setPoolVolume] = useState<number | null>(null)
+  const [pumpFlowRate, setPumpFlowRate] = useState<number | null>(null)
 
   // Fetch user settings and role
   useEffect(() => {
     if (!user) return
 
-    const roleRef = ref(db, `users/${user.uid}/role`)
-    onValue(roleRef, (snapshot) => {
-      const userRole = snapshot.val()
-      setRole(userRole)
-      const isPremium = userRole === 'cliente_premium' || userRole === 'admin'
+    const userRef = ref(db, `users/${user.uid}`)
+    onValue(userRef, (snapshot) => {
+      const userData = snapshot.val()
+      if (userData) {
+        setRole(userData.role)
+        if (userData.poolVolume) {
+          setPoolVolume(parseFloat(userData.poolVolume))
+        }
+        if (userData.pumpFlowRate) {
+          setPumpFlowRate(parseFloat(userData.pumpFlowRate))
+        }
 
-      if (isPremium) {
-        const settingsRef = ref(db, `users/${user.uid}/alertSettings`)
-        onValue(settingsRef, (settingsSnap) => {
-          const settings = settingsSnap.val()
-          if (settings && settings.thresholds) {
-            // Merge custom thresholds with defaults
-            setCurrentRanges(prev => ({
-              ...prev,
-              tempAgua: {
-                ...prev.tempAgua,
-                min: settings.thresholds.waterTemp?.enabled ? settings.thresholds.waterTemp.min : prev.tempAgua.min,
-                max: settings.thresholds.waterTemp?.enabled ? settings.thresholds.waterTemp.max : prev.tempAgua.max,
-              },
-              tempAire: {
-                ...prev.tempAire,
-                min: settings.thresholds.airTemp?.enabled ? settings.thresholds.airTemp.min : prev.tempAire.min,
-                max: settings.thresholds.airTemp?.enabled ? settings.thresholds.airTemp.max : prev.tempAire.max,
-              },
-              humedadAire: {
-                ...prev.humedadAire,
-                max: settings.thresholds.humidity?.enabled ? settings.thresholds.humidity.max : prev.humedadAire.max,
-              }
-            }))
-          }
-        })
+        const isPremium = userData.role === 'cliente_premium' || userData.role === 'admin'
+
+        if (isPremium) {
+          const settingsRef = ref(db, `users/${user.uid}/alertSettings`)
+          onValue(settingsRef, (settingsSnap) => {
+            const settings = settingsSnap.val()
+            if (settings && settings.thresholds) {
+              // Merge custom thresholds with defaults
+              setCurrentRanges(prev => ({
+                ...prev,
+                tempAgua: {
+                  ...prev.tempAgua,
+                  min: settings.thresholds.waterTemp?.enabled ? settings.thresholds.waterTemp.min : prev.tempAgua.min,
+                  max: settings.thresholds.waterTemp?.enabled ? settings.thresholds.waterTemp.max : prev.tempAgua.max,
+                },
+                tempAire: {
+                  ...prev.tempAire,
+                  min: settings.thresholds.airTemp?.enabled ? settings.thresholds.airTemp.min : prev.tempAire.min,
+                  max: settings.thresholds.airTemp?.enabled ? settings.thresholds.airTemp.max : prev.tempAire.max,
+                },
+                humedadAire: {
+                  ...prev.humedadAire,
+                  max: settings.thresholds.humidity?.enabled ? settings.thresholds.humidity.max : prev.humedadAire.max,
+                }
+              }))
+            }
+          })
+        }
       }
     })
   }, [user])
@@ -232,9 +245,17 @@ export default function DashboardPage() {
                 <div onClick={() => handleCardClick('ph')} className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-95">
                   <Card className={sensorActivo === 'ph' ? 'ring-2 ring-green-500' : ''}>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base font-medium flex items-center">
-                        <Activity className="h-4 w-4 mr-2 text-green-500" /> {currentRanges.ph.label}
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base font-medium flex items-center">
+                          <Activity className="h-4 w-4 mr-2 text-green-500" /> {currentRanges.ph.label}
+                        </CardTitle>
+                        {(role === 'cliente_premium' || role === 'admin') && (
+                          <ChemicalWizard
+                            poolVolume={poolVolume}
+                            currentPh={parseFloat(calcularPH(lecturas.phVoltaje))}
+                          />
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="text-3xl font-bold">{calcularPH(lecturas.phVoltaje)}</div>
@@ -288,6 +309,9 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-blue-500" />
                       <span className="text-sm font-medium">Tiempo Activo</span>
+                      {(role === 'cliente_premium' || role === 'admin') && (
+                        <FiltrationOptimizer poolVolume={poolVolume} pumpFlowRate={pumpFlowRate} />
+                      )}
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-sm font-bold">{formatUptime(lecturas.uptime)}</span>
