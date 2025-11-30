@@ -9,6 +9,7 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { SENSOR_RANGES } from "@/constants/ranges"
 import { useAuth } from "@/contexts/AuthContext"
 import { SwimAnalysis } from "@/components/swim-analysis"
+import { ShareDashboardModal } from "@/components/share-dashboard-modal"
 import dynamic from 'next/dynamic'
 
 const PoolScene = dynamic(() => import("@/components/PoolScene"), {
@@ -144,7 +145,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
-      <DashboardHeader title="Mi Dispositivo" />
+      <div className="relative">
+        <DashboardHeader title="Mi Dispositivo" />
+        {(role === 'cliente_premium' || role === 'admin') && (
+          <div className="absolute top-4 right-4 z-50">
+            <ShareDashboardModal />
+          </div>
+        )}
+      </div>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         {loading && (
