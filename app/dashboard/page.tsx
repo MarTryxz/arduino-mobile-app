@@ -12,6 +12,7 @@ import { SwimAnalysis } from "@/components/swim-analysis"
 import { ShareDashboardModal } from "@/components/share-dashboard-modal"
 import { ChemicalWizard } from "@/components/chemical-wizard"
 import { FiltrationOptimizer } from "@/components/filtration-optimizer"
+import { HeatingEstimator } from "@/components/heating-estimator"
 import dynamic from 'next/dynamic'
 
 const PoolScene = dynamic(() => import("@/components/PoolScene"), {
@@ -42,8 +43,12 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const [currentRanges, setCurrentRanges] = useState(SENSOR_RANGES)
   const [role, setRole] = useState<string | null>(null)
-  const [poolVolume, setPoolVolume] = useState<number | null>(null)
-  const [pumpFlowRate, setPumpFlowRate] = useState<number | null>(null)
+  const [userData, setUserData] = useState({
+    poolVolume: 0,
+    pumpFlowRate: 0,
+    hasHeater: false,
+    heaterPower: 0
+  })
 
   // Fetch user settings and role
   useEffect(() => {
@@ -51,17 +56,17 @@ export default function DashboardPage() {
 
     const userRef = ref(db, `users/${user.uid}`)
     onValue(userRef, (snapshot) => {
-      const userData = snapshot.val()
-      if (userData) {
-        setRole(userData.role)
-        if (userData.poolVolume) {
-          setPoolVolume(parseFloat(userData.poolVolume))
-        }
-        if (userData.pumpFlowRate) {
-          setPumpFlowRate(parseFloat(userData.pumpFlowRate))
-        }
+      const data = snapshot.val()
+      if (data) {
+        setRole(data.role)
+        setUserData({
+          poolVolume: data.poolVolume ? Number(data.poolVolume) : 0,
+          pumpFlowRate: data.pumpFlowRate ? Number(data.pumpFlowRate) : 0,
+          hasHeater: data.hasHeater || false,
+          heaterPower: data.heaterPower ? Number(data.heaterPower) : 0
+        })
 
-        const isPremium = userData.role === 'cliente_premium' || userData.role === 'admin'
+        const isPremium = data.role === 'cliente_premium' || data.role === 'admin'
 
         if (isPremium) {
           const settingsRef = ref(db, `users/${user.uid}/alertSettings`)
@@ -159,12 +164,11 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
       <div className="relative">
-        <DashboardHeader title="Mi Dispositivo" />
-        {(role === 'cliente_premium' || role === 'admin') && (
-          <div className="absolute top-4 right-4 z-50">
+        <DashboardHeader title="Mi Dispositivo">
+          {(role === 'cliente_premium' || role === 'admin') && (
             <ShareDashboardModal />
-          </div>
-        )}
+          )}
+        </DashboardHeader>
       </div>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
@@ -203,6 +207,20 @@ export default function DashboardPage() {
                       <p className="text-sm text-muted-foreground">
                         {lecturas.tempAgua < currentRanges.tempAgua.min ? '❄️ Fría' : lecturas.tempAgua > currentRanges.tempAgua.max ? '🔥 Caliente' : '✅ Óptima'}
                       </p>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Ideal: 26°C - 28°C
+                      </div>
+                      {userData.hasHeater && (
+                        <div className="mt-4 pt-4 border-t w-full">
+                          <HeatingEstimator
+                            currentTemp={lecturas.tempAgua}
+                            poolVolume={userData.poolVolume}
+                            heaterPower={userData.heaterPower}
+                            hasHeater={userData.hasHeater}
+                            isPremium={role === 'cliente_premium' || role === 'admin'}
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
@@ -251,7 +269,7 @@ export default function DashboardPage() {
                         </CardTitle>
                         {(role === 'cliente_premium' || role === 'admin') && (
                           <ChemicalWizard
-                            poolVolume={poolVolume}
+                            poolVolume={userData.poolVolume}
                             currentPh={parseFloat(calcularPH(lecturas.phVoltaje))}
                           />
                         )}
@@ -310,7 +328,7 @@ export default function DashboardPage() {
                       <Clock className="h-4 w-4 text-blue-500" />
                       <span className="text-sm font-medium">Tiempo Activo</span>
                       {(role === 'cliente_premium' || role === 'admin') && (
-                        <FiltrationOptimizer poolVolume={poolVolume} pumpFlowRate={pumpFlowRate} />
+                        <FiltrationOptimizer poolVolume={userData.poolVolume} pumpFlowRate={userData.pumpFlowRate} />
                       )}
                     </div>
                     <div className="flex flex-col items-end">

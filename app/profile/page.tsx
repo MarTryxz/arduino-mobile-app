@@ -9,12 +9,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { toast } from "sonner"
-import { User, Phone, MapPin, Save, ArrowLeft, Cpu, Crown, Shield, Droplets, Zap } from "lucide-react"
+import { User, Phone, MapPin, Save, ArrowLeft, Cpu, Crown, Shield, Droplets, Zap, Flame, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { PoolVolumeCalculator } from "@/components/pool-volume-calculator"
 import { HP_TO_FLOW_RATE } from "@/lib/filtration-calc"
 import { DashboardHeader } from "@/components/dashboard-header"
+import { Switch } from "@/components/ui/switch"
+import { PremiumModal } from "@/components/premium-modal"
 
 export default function ProfilePage() {
     const { user } = useAuth()
@@ -22,6 +24,7 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [role, setRole] = useState<string | null>(null)
+    const [showPremiumModal, setShowPremiumModal] = useState(false)
 
     const [formData, setFormData] = useState({
         displayName: '',
@@ -29,7 +32,9 @@ export default function ProfilePage() {
         address: '',
         macAddress: '',
         poolVolume: '',
-        pumpFlowRate: ''
+        pumpFlowRate: '',
+        hasHeater: false,
+        heaterPower: ''
     })
 
     useEffect(() => {
@@ -45,7 +50,9 @@ export default function ProfilePage() {
                     address: data.address || '',
                     macAddress: data.macAddress || '',
                     poolVolume: data.poolVolume || '',
-                    pumpFlowRate: data.pumpFlowRate || ''
+                    pumpFlowRate: data.pumpFlowRate || '',
+                    hasHeater: data.hasHeater || false,
+                    heaterPower: data.heaterPower || ''
                 })
                 setRole(data.role)
             }
@@ -72,7 +79,9 @@ export default function ProfilePage() {
                 address: formData.address,
                 macAddress: formData.macAddress,
                 poolVolume: formData.poolVolume,
-                pumpFlowRate: formData.pumpFlowRate
+                pumpFlowRate: formData.pumpFlowRate,
+                hasHeater: formData.hasHeater,
+                heaterPower: formData.heaterPower
             }
 
             await update(ref(db, `users/${user.uid}`), updates)
@@ -110,6 +119,44 @@ export default function ProfilePage() {
             }))
             toast.info(`Capacidad estimada: ${flowRate} m³/h para ${hp} HP`)
         }
+    }
+
+    const handleUseCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            toast.error("Tu navegador no soporta geolocalización")
+            return
+        }
+
+        setLoading(true)
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude, longitude } = position.coords
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                    const data = await response.json()
+
+                    if (data && data.display_name) {
+                        setFormData(prev => ({
+                            ...prev,
+                            address: data.display_name
+                        }))
+                        toast.success("Dirección actualizada")
+                    } else {
+                        toast.error("No se pudo obtener la dirección")
+                    }
+                } catch (error) {
+                    console.error("Error fetching address:", error)
+                    toast.error("Error al obtener la dirección")
+                } finally {
+                    setLoading(false)
+                }
+            },
+            (error) => {
+                console.error("Geolocation error:", error)
+                toast.error("Error al obtener tu ubicación")
+                setLoading(false)
+            }
+        )
     }
 
     return (
@@ -166,13 +213,18 @@ export default function ProfilePage() {
                                     <p className="text-sm text-slate-600 dark:text-slate-400">
                                         Actualiza a Premium para acceder a análisis históricos, alertas avanzadas y soporte prioritario.
                                     </p>
-                                    <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all">
+                                    <Button
+                                        onClick={() => setShowPremiumModal(true)}
+                                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all"
+                                    >
                                         Obtener Premium
                                     </Button>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
+
+                    <PremiumModal open={showPremiumModal} onOpenChange={setShowPremiumModal} />
 
                     {/* Formulario de Datos */}
                     <Card>
@@ -224,10 +276,25 @@ export default function ProfilePage() {
                                     </div>
 
                                     <div className="space-y-2 md:col-span-2">
-                                        <Label htmlFor="address" className="flex items-center gap-2">
-                                            <MapPin className="h-4 w-4 text-slate-400" />
-                                            Dirección de la Piscina
-                                        </Label>
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="address" className="flex items-center gap-2">
+                                                <MapPin className="h-4 w-4 text-slate-400" />
+                                                Dirección de la Piscina
+                                            </Label>
+                                            {isEditing && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                    onClick={handleUseCurrentLocation}
+                                                    disabled={loading}
+                                                >
+                                                    {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <MapPin className="h-3 w-3 mr-1" />}
+                                                    Usar ubicación actual
+                                                </Button>
+                                            )}
+                                        </div>
                                         <Input
                                             id="address"
                                             name="address"
@@ -323,6 +390,41 @@ export default function ProfilePage() {
                                         </p>
                                     </div>
 
+                                    {/* Climatización Section */}
+                                    <div className="space-y-2 md:col-span-2 pt-4 border-t">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="hasHeater" className="flex items-center gap-2">
+                                                <Flame className="h-4 w-4 text-orange-500" />
+                                                Sistema de Climatización
+                                            </Label>
+                                            <Switch
+                                                id="hasHeater"
+                                                checked={formData.hasHeater}
+                                                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, hasHeater: checked }))}
+                                                disabled={!isEditing}
+                                            />
+                                        </div>
+                                        {formData.hasHeater && (
+                                            <div className="space-y-2 mt-2 animate-in fade-in slide-in-from-top-2">
+                                                <Label htmlFor="heaterPower" className="flex items-center gap-2">
+                                                    Potencia de Climatización (BTU)
+                                                </Label>
+                                                <Input
+                                                    id="heaterPower"
+                                                    name="heaterPower"
+                                                    type="number"
+                                                    value={formData.heaterPower}
+                                                    onChange={handleChange}
+                                                    disabled={!isEditing || !formData.hasHeater}
+                                                    placeholder="Ej: 50000"
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    Necesario para cálculos de eficiencia energética.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
                                 </div>
 
                                 {isEditing && (
@@ -362,6 +464,17 @@ export default function ProfilePage() {
                                     <div className="text-xs text-green-600/80 dark:text-green-400/80">Capacidad Bomba</div>
                                 </CardContent>
                             </Card>
+                            {formData.hasHeater && (
+                                <Card className="bg-orange-50 dark:bg-orange-900/20 border-none col-span-2">
+                                    <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                                        <Flame className="h-8 w-8 text-orange-500 mb-2" />
+                                        <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+                                            {formData.heaterPower ? `${parseInt(formData.heaterPower).toLocaleString()} BTU` : '-'}
+                                        </div>
+                                        <div className="text-xs text-orange-600/80 dark:text-orange-400/80">Climatización</div>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     )}
                 </div>
