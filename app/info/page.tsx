@@ -43,62 +43,35 @@ export default function InfoPage() {
                 <div className="p-2 rounded-full bg-app-blue-light/20">
                   <HelpCircle className="h-5 w-5 text-app-blue" />
                 </div>
-                <div className="font-medium text-foreground">Guía de LEDs del dispositivo</div>
+                <div className="font-medium text-foreground">Guía de Indicadores del Dispositivo</div>
               </div>
 
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="led-power">
-                  <AccordionTrigger className="text-sm">LED de encendido (verde)</AccordionTrigger>
+                  <AccordionTrigger className="text-sm">🟢 LED de Estado (Verde)</AccordionTrigger>
                   <AccordionContent>
                     <p className="text-sm text-muted-foreground">
-                      <strong>Encendido fijo:</strong> El dispositivo está encendido y funcionando correctamente.
-                      <br />
-                      <strong>Parpadeo lento:</strong> El dispositivo está en modo de ahorro de energía.
-                      <br />
-                      <strong>Apagado:</strong> El dispositivo está apagado o sin alimentación.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="led-wifi">
-                  <AccordionTrigger className="text-sm">LED de Wi-Fi (azul)</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Encendido fijo:</strong> Conectado a la red Wi-Fi.
-                      <br />
-                      <strong>Parpadeo rápido:</strong> Intentando conectar a la red Wi-Fi.
-                      <br />
-                      <strong>Parpadeo lento:</strong> En modo de configuración Wi-Fi.
-                      <br />
-                      <strong>Apagado:</strong> Wi-Fi desactivado o sin configurar.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="led-bluetooth">
-                  <AccordionTrigger className="text-sm">LED de Bluetooth (azul)</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Encendido fijo:</strong> Conectado a un dispositivo por Bluetooth.
-                      <br />
-                      <strong>Parpadeo:</strong> En modo de emparejamiento o buscando dispositivos.
-                      <br />
-                      <strong>Apagado:</strong> Bluetooth desactivado.
+                      Parpadea cada 5 segundos indicando funcionamiento normal y envío de datos.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
 
                 <AccordionItem value="led-error">
-                  <AccordionTrigger className="text-sm">LED de error (rojo)</AccordionTrigger>
+                  <AccordionTrigger className="text-sm">🔴 LED de Alerta (Rojo)</AccordionTrigger>
                   <AccordionContent>
                     <p className="text-sm text-muted-foreground">
-                      <strong>Encendido fijo:</strong> Error crítico en el sistema.
+                      <strong>Parpadeo rápido continuo:</strong> Fallo de hardware al iniciar (Sensor BME280 no detectado).
                       <br />
-                      <strong>Parpadeo rápido:</strong> Error en los sensores o lecturas fuera de rango.
-                      <br />
-                      <strong>Parpadeo lento:</strong> Batería baja.
-                      <br />
-                      <strong>Apagado:</strong> Sin errores detectados.
+                      <strong>Parpadeo ocasional:</strong> Error de lectura momentáneo en los sensores.
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="buzzer">
+                  <AccordionTrigger className="text-sm">🔊 Alerta Sonora (Buzzer)</AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-sm text-muted-foreground">
+                      Suena brevemente sincronizado con el LED rojo cuando ocurre un error de lectura o desconexión de sonda.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
