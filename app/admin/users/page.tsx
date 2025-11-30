@@ -26,8 +26,25 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Search, Shield, User, Crown, Trash2 } from "lucide-react"
+import { Search, Shield, User, Crown, Trash2, MoreHorizontal, Copy, Calendar, Filter, Users, TrendingUp } from "lucide-react"
 import { toast } from "sonner"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface UserData {
     uid: string
@@ -44,6 +61,10 @@ export default function AdminUsersPage() {
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<UserData[]>([])
     const [searchTerm, setSearchTerm] = useState("")
+    const [roleFilter, setRoleFilter] = useState("all")
+    const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false)
+    const [selectedUser, setSelectedUser] = useState<UserData | null>(null)
+    const [newRole, setNewRole] = useState("")
 
     // Check admin role and fetch users
     useEffect(() => {
@@ -83,12 +104,21 @@ export default function AdminUsersPage() {
         checkRoleAndFetch()
     }, [user, router])
 
-    const handleRoleChange = async (uid: string, newRole: string) => {
+    const openRoleDialog = (user: UserData) => {
+        setSelectedUser(user)
+        setNewRole(user.role)
+        setIsRoleDialogOpen(true)
+    }
+
+    const handleSaveRole = async () => {
+        if (!selectedUser || !newRole) return
+
         try {
-            await update(ref(db, `users/${uid}`), {
+            await update(ref(db, `users/${selectedUser.uid}`), {
                 role: newRole
             })
             toast.success("Rol actualizado correctamente")
+            setIsRoleDialogOpen(false)
         } catch (error) {
             console.error("Error updating role:", error)
             toast.error("Error al actualizar el rol")
@@ -107,10 +137,25 @@ export default function AdminUsersPage() {
         }
     }
 
-    const filteredUsers = users.filter(u =>
-        u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const getInitials = (name: string) => {
+        return name
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2)
+    }
+
+    const filteredUsers = users.filter(u => {
+        const matchesSearch = u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesFilter = roleFilter === 'all' || u.role === roleFilter
+        return matchesSearch && matchesFilter
+    })
+
+    const totalUsers = users.length
+    const premiumUsers = users.filter(u => u.role === 'cliente_premium').length
+    const adminUsers = users.filter(u => u.role === 'admin').length
 
     if (loading) {
         return (
@@ -124,19 +169,69 @@ export default function AdminUsersPage() {
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
             <DashboardHeader title="Administración de Usuarios" />
 
-            <main className="container mx-auto px-4 py-8">
+            <main className="container mx-auto px-4 py-8 space-y-6">
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{totalUsers}</div>
+                            <p className="text-xs text-muted-foreground">Usuarios registrados</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Usuarios Premium</CardTitle>
+                            <Crown className="h-4 w-4 text-amber-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{premiumUsers}</div>
+                            <p className="text-xs text-muted-foreground">Suscripciones activas</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Administradores</CardTitle>
+                            <Shield className="h-4 w-4 text-blue-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{adminUsers}</div>
+                            <p className="text-xs text-muted-foreground">Con acceso total</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
                 <Card>
                     <CardHeader>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <CardTitle className="text-2xl font-bold">Usuarios Registrados</CardTitle>
-                            <div className="relative w-64">
-                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
-                                <Input
-                                    placeholder="Buscar usuario..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-8"
-                                />
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <div className="relative w-full sm:w-64">
+                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                                    <Input
+                                        placeholder="Buscar usuario..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="pl-8"
+                                    />
+                                </div>
+                                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                                    <SelectTrigger className="w-full sm:w-[180px]">
+                                        <div className="flex items-center gap-2">
+                                            <Filter className="w-4 h-4" />
+                                            <SelectValue placeholder="Filtrar por rol" />
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos los roles</SelectItem>
+                                        <SelectItem value="cliente">Clientes</SelectItem>
+                                        <SelectItem value="cliente_premium">Premium</SelectItem>
+                                        <SelectItem value="admin">Administradores</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </CardHeader>
@@ -146,8 +241,9 @@ export default function AdminUsersPage() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Usuario</TableHead>
-                                        <TableHead>Rol Actual</TableHead>
-                                        <TableHead>Acciones</TableHead>
+                                        <TableHead>Fecha Registro</TableHead>
+                                        <TableHead>Rol</TableHead>
+                                        <TableHead className="text-right">Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -156,9 +252,21 @@ export default function AdminUsersPage() {
                                         return (
                                             <TableRow key={userData.uid}>
                                                 <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium">{userData.displayName}</span>
-                                                        <span className="text-sm text-gray-500">{userData.email}</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="h-9 w-9">
+                                                            <AvatarImage src="" alt={userData.displayName} />
+                                                            <AvatarFallback>{getInitials(userData.displayName || 'U')}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium">{userData.displayName}</span>
+                                                            <span className="text-sm text-gray-500">{userData.email}</span>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center text-xs text-muted-foreground">
+                                                        <Calendar className="mr-2 h-3 w-3" />
+                                                        No disponible
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -172,30 +280,38 @@ export default function AdminUsersPage() {
                                                         {userData.role === 'admin' ? 'Administrador' : userData.role === 'cliente_premium' ? 'Premium' : 'Cliente'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <Select
-                                                        defaultValue={userData.role}
-                                                        onValueChange={(value) => handleRoleChange(userData.uid, value)}
-                                                        disabled={isCurrentUser}
-                                                    >
-                                                        <SelectTrigger className="w-[180px]">
-                                                            <SelectValue placeholder="Seleccionar rol" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="cliente">Cliente</SelectItem>
-                                                            <SelectItem value="cliente_premium">Premium</SelectItem>
-                                                            <SelectItem value="admin">Administrador</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className={`ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 ${isCurrentUser ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                        onClick={() => handleDeleteUser(userData.uid, userData.displayName)}
-                                                        disabled={isCurrentUser}
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                <span className="sr-only">Abrir menú</span>
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                                            <DropdownMenuItem onClick={() => {
+                                                                navigator.clipboard.writeText(userData.uid)
+                                                                toast.success("ID copiado al portapapeles")
+                                                            }}>
+                                                                <Copy className="mr-2 h-4 w-4" />
+                                                                Copiar ID
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem onClick={() => openRoleDialog(userData)} disabled={isCurrentUser}>
+                                                                <Shield className="mr-2 h-4 w-4" />
+                                                                Cambiar Rol
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
+                                                                onClick={() => handleDeleteUser(userData.uid, userData.displayName)}
+                                                                disabled={isCurrentUser}
+                                                            >
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Eliminar
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </TableCell>
                                             </TableRow>
                                         )
@@ -206,6 +322,38 @@ export default function AdminUsersPage() {
                     </CardContent>
                 </Card>
             </main>
+
+            <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Cambiar Rol de Usuario</DialogTitle>
+                        <DialogDescription>
+                            Selecciona el nuevo rol para <strong>{selectedUser?.displayName}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="role" className="text-right">
+                                Rol
+                            </Label>
+                            <Select value={newRole} onValueChange={setNewRole}>
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Seleccionar rol" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="cliente">Cliente</SelectItem>
+                                    <SelectItem value="cliente_premium">Premium</SelectItem>
+                                    <SelectItem value="admin">Administrador</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleSaveRole}>Guardar Cambios</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div >
     )
 }

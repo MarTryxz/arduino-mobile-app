@@ -7,6 +7,9 @@ import { db } from '@/firebase'
 import { ref, onValue } from 'firebase/database'
 import { DashboardHeader } from "@/components/dashboard-header"
 import { SENSOR_RANGES } from "@/constants/ranges"
+import { useAuth } from "@/contexts/AuthContext"
+import { SwimAnalysis } from "@/components/swim-analysis"
+import { ShareDashboardModal } from "@/components/share-dashboard-modal"
 import dynamic from 'next/dynamic'
 
 const PoolScene = dynamic(() => import("@/components/PoolScene"), {
@@ -33,6 +36,49 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [sensorActivo, setSensorActivo] = useState<string | null>(null)
+
+  const { user } = useAuth()
+  const [currentRanges, setCurrentRanges] = useState(SENSOR_RANGES)
+  const [role, setRole] = useState<string | null>(null)
+
+  // Fetch user settings and role
+  useEffect(() => {
+    if (!user) return
+
+    const roleRef = ref(db, `users/${user.uid}/role`)
+    onValue(roleRef, (snapshot) => {
+      const userRole = snapshot.val()
+      setRole(userRole)
+      const isPremium = userRole === 'cliente_premium' || userRole === 'admin'
+
+      if (isPremium) {
+        const settingsRef = ref(db, `users/${user.uid}/alertSettings`)
+        onValue(settingsRef, (settingsSnap) => {
+          const settings = settingsSnap.val()
+          if (settings && settings.thresholds) {
+            // Merge custom thresholds with defaults
+            setCurrentRanges(prev => ({
+              ...prev,
+              tempAgua: {
+                ...prev.tempAgua,
+                min: settings.thresholds.waterTemp?.enabled ? settings.thresholds.waterTemp.min : prev.tempAgua.min,
+                max: settings.thresholds.waterTemp?.enabled ? settings.thresholds.waterTemp.max : prev.tempAgua.max,
+              },
+              tempAire: {
+                ...prev.tempAire,
+                min: settings.thresholds.airTemp?.enabled ? settings.thresholds.airTemp.min : prev.tempAire.min,
+                max: settings.thresholds.airTemp?.enabled ? settings.thresholds.airTemp.max : prev.tempAire.max,
+              },
+              humedadAire: {
+                ...prev.humedadAire,
+                max: settings.thresholds.humidity?.enabled ? settings.thresholds.humidity.max : prev.humedadAire.max,
+              }
+            }))
+          }
+        })
+      }
+    })
+  }, [user])
 
   useEffect(() => {
     const lecturasRef = ref(db, 'sensor_status/actual')
@@ -99,7 +145,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
-      <DashboardHeader title="Mi Dispositivo" />
+      <div className="relative">
+        <DashboardHeader title="Mi Dispositivo" />
+        {(role === 'cliente_premium' || role === 'admin') && (
+          <div className="absolute top-4 right-4 z-50">
+            <ShareDashboardModal />
+          </div>
+        )}
+      </div>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         {loading && (
@@ -121,6 +174,13 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground">{tiempoTranscurrido()}</p>
             </div>
 
+            {/* Smart Swim Analysis (Premium Only) */}
+            {(role === 'cliente_premium' || role === 'admin') && (
+              <div className="mb-6">
+                <SwimAnalysis waterTemp={lecturas.tempAgua} />
+              </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1 flex flex-col gap-4">
 
@@ -129,13 +189,13 @@ export default function DashboardPage() {
                   <Card className={sensorActivo === 'tempAgua' ? 'ring-2 ring-blue-500' : ''}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base font-medium flex items-center">
-                        <Droplet className="h-4 w-4 mr-2 text-blue-500" /> {SENSOR_RANGES.tempAgua.label}
+                        <Droplet className="h-4 w-4 mr-2 text-blue-500" /> {currentRanges.tempAgua.label}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold">{lecturas.tempAgua.toFixed(1)}{SENSOR_RANGES.tempAgua.unit}</div>
+                      <div className="text-3xl font-bold">{lecturas.tempAgua.toFixed(1)}{currentRanges.tempAgua.unit}</div>
                       <p className="text-sm text-muted-foreground">
-                        {lecturas.tempAgua < SENSOR_RANGES.tempAgua.min ? '❄️ Fría' : lecturas.tempAgua > SENSOR_RANGES.tempAgua.max ? '🔥 Caliente' : '✅ Óptima'}
+                        {lecturas.tempAgua < currentRanges.tempAgua.min ? '❄️ Fría' : lecturas.tempAgua > currentRanges.tempAgua.max ? '🔥 Caliente' : '✅ Óptima'}
                       </p>
                     </CardContent>
                   </Card>
@@ -146,13 +206,13 @@ export default function DashboardPage() {
                   <Card className={sensorActivo === 'tempAire' ? 'ring-2 ring-orange-500' : ''}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base font-medium flex items-center">
-                        <Thermometer className="h-4 w-4 mr-2 text-orange-500" /> {SENSOR_RANGES.tempAire.label}
+                        <Thermometer className="h-4 w-4 mr-2 text-orange-500" /> {currentRanges.tempAire.label}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold">{lecturas.tempAire.toFixed(1)}{SENSOR_RANGES.tempAire.unit}</div>
+                      <div className="text-3xl font-bold">{lecturas.tempAire.toFixed(1)}{currentRanges.tempAire.unit}</div>
                       <p className="text-sm text-muted-foreground">
-                        {lecturas.tempAire < SENSOR_RANGES.tempAire.min ? '❄️ Frío' : '✅ Agradable'}
+                        {lecturas.tempAire < currentRanges.tempAire.min ? '❄️ Frío' : '✅ Agradable'}
                       </p>
                     </CardContent>
                   </Card>
@@ -163,13 +223,13 @@ export default function DashboardPage() {
                   <Card className={sensorActivo === 'humedadAire' ? 'ring-2 ring-cyan-500' : ''}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base font-medium flex items-center">
-                        <Wind className="h-4 w-4 mr-2 text-cyan-500" /> {SENSOR_RANGES.humedadAire.label}
+                        <Wind className="h-4 w-4 mr-2 text-cyan-500" /> {currentRanges.humedadAire.label}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold">{lecturas.humedadAire.toFixed(1)}{SENSOR_RANGES.humedadAire.unit}</div>
+                      <div className="text-3xl font-bold">{lecturas.humedadAire.toFixed(1)}{currentRanges.humedadAire.unit}</div>
                       <p className="text-sm text-muted-foreground">
-                        {lecturas.humedadAire > SENSOR_RANGES.humedadAire.max ? '💧 Húmedo' : '✅ Normal'}
+                        {lecturas.humedadAire > currentRanges.humedadAire.max ? '💧 Húmedo' : '✅ Normal'}
                       </p>
                     </CardContent>
                   </Card>
@@ -180,13 +240,13 @@ export default function DashboardPage() {
                   <Card className={sensorActivo === 'ph' ? 'ring-2 ring-green-500' : ''}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base font-medium flex items-center">
-                        <Activity className="h-4 w-4 mr-2 text-green-500" /> {SENSOR_RANGES.ph.label}
+                        <Activity className="h-4 w-4 mr-2 text-green-500" /> {currentRanges.ph.label}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="text-3xl font-bold">{calcularPH(lecturas.phVoltaje)}</div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {parseFloat(calcularPH(lecturas.phVoltaje)) < SENSOR_RANGES.ph.min ? '🔴 Ácido' : '✅ Neutro'}
+                        {parseFloat(calcularPH(lecturas.phVoltaje)) < currentRanges.ph.min ? '🔴 Ácido' : '✅ Neutro'}
                       </p>
                     </CardContent>
                   </Card>
