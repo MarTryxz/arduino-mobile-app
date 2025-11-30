@@ -44,6 +44,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface UserData {
     uid: string
@@ -134,6 +135,15 @@ export default function AdminUsersPage() {
                 toast.error("Error al eliminar el usuario")
             }
         }
+    }
+
+    const getInitials = (name: string) => {
+        return name
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2)
     }
 
     const filteredUsers = users.filter(u => {
@@ -242,14 +252,20 @@ export default function AdminUsersPage() {
                                         return (
                                             <TableRow key={userData.uid}>
                                                 <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium">{userData.displayName}</span>
-                                                        <span className="text-sm text-gray-500">{userData.email}</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="h-9 w-9">
+                                                            <AvatarImage src="" alt={userData.displayName} />
+                                                            <AvatarFallback>{getInitials(userData.displayName || 'U')}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium">{userData.displayName}</span>
+                                                            <span className="text-sm text-gray-500">{userData.email}</span>
+                                                        </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex items-center text-sm text-gray-500">
-                                                        <Calendar className="mr-2 h-4 w-4" />
+                                                    <div className="flex items-center text-xs text-muted-foreground">
+                                                        <Calendar className="mr-2 h-3 w-3" />
                                                         No disponible
                                                     </div>
                                                 </TableCell>
