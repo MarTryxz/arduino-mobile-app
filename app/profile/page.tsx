@@ -11,10 +11,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { User, Phone, MapPin, Save, ArrowLeft, Cpu, Crown, Shield } from "lucide-react"
+import { User, Phone, MapPin, Save, ArrowLeft, Cpu, Crown, Shield, Droplets } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { PoolVolumeCalculator } from "@/components/pool-volume-calculator"
 
 export default function ProfilePage() {
     const { user, logOut } = useAuth()
@@ -30,7 +31,8 @@ export default function ProfilePage() {
         lastName: '',
         phone: '',
         poolLocation: '',
-        macAddress: ''
+        macAddress: '',
+        poolVolume: ''
     })
 
     // Redirigir si no hay usuario
@@ -52,7 +54,8 @@ export default function ProfilePage() {
                         lastName: data.lastName || '',
                         phone: data.phone || '',
                         poolLocation: data.poolLocation || '',
-                        macAddress: data.macAddress || ''
+                        macAddress: data.macAddress || '',
+                        poolVolume: data.poolVolume || ''
                     })
                     if (data.role) {
                         setRole(data.role)
@@ -75,15 +78,18 @@ export default function ProfilePage() {
         }
     }
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target
-    }
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
         setFormData(prev => ({
             ...prev,
             [name]: value
+        }))
+    }
+
+    const handleVolumeCalculated = (volume: number) => {
+        setFormData(prev => ({
+            ...prev,
+            poolVolume: volume.toString()
         }))
     }
 
@@ -101,7 +107,8 @@ export default function ProfilePage() {
                 lastName: formData.lastName,
                 phone: formData.phone,
                 poolLocation: formData.poolLocation,
-                macAddress: formData.macAddress
+                macAddress: formData.macAddress,
+                poolVolume: formData.poolVolume
             })
             setMessage({ type: 'success', text: 'Perfil actualizado correctamente' })
             setIsEditing(false)
@@ -331,6 +338,29 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
 
+                                    {/* Volumen de la Piscina */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="poolVolume">Volumen de la Piscina (Litros)</Label>
+                                        <div className="flex gap-2">
+                                            <div className="relative flex-1">
+                                                <Droplets className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                                <Input
+                                                    id="poolVolume"
+                                                    name="poolVolume"
+                                                    type="number"
+                                                    value={formData.poolVolume}
+                                                    onChange={handleInputChange}
+                                                    className="pl-10"
+                                                    placeholder="Ej: 40000"
+                                                />
+                                            </div>
+                                            <PoolVolumeCalculator onCalculate={handleVolumeCalculated} />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Necesario para calcular dosis de químicos y tiempos de filtrado.
+                                        </p>
+                                    </div>
+
                                     {/* MAC del Dispositivo */}
                                     <div className="space-y-2">
                                         <Label htmlFor="macAddress">MAC del Dispositivo</Label>
@@ -399,11 +429,21 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Ubicación de la Piscina</h3>
-                                        <div className="mt-1 flex items-center text-lg">
-                                            <MapPin className="w-5 h-5 mr-2 text-blue-500" />
-                                            {formData.poolLocation || <span className="text-gray-400 italic">No especificada</span>}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Ubicación de la Piscina</h3>
+                                            <div className="mt-1 flex items-center text-lg">
+                                                <MapPin className="w-5 h-5 mr-2 text-blue-500" />
+                                                {formData.poolLocation || <span className="text-gray-400 italic">No especificada</span>}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Volumen de la Piscina</h3>
+                                            <div className="mt-1 flex items-center text-lg">
+                                                <Droplets className="w-5 h-5 mr-2 text-blue-500" />
+                                                {formData.poolVolume ? `${parseInt(formData.poolVolume).toLocaleString()} L` : <span className="text-gray-400 italic">No especificado</span>}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -464,3 +504,4 @@ export default function ProfilePage() {
         </div>
     )
 }
+
