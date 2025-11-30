@@ -2,23 +2,54 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Sparkles, MapPin } from "lucide-react"
+import { Sparkles, MapPin, RefreshCw } from "lucide-react"
 import { getWeatherForecast, getWeatherIcon, getWeatherDescription, DEFAULT_LOCATION, WeatherData } from "@/lib/weather"
+import { User } from "firebase/auth"
+import { db } from "@/firebase"
+import { ref, get, set } from "firebase/database"
+import { Button } from "@/components/ui/button"
 
 interface SwimAnalysisProps {
     waterTemp: number
+    user: User
 }
 
-export function SwimAnalysis({ waterTemp }: SwimAnalysisProps) {
+interface SavedAnalysis {
+    content: string
+    dateKey: string
+    timestamp: number
+    weatherCode: number
+    weatherTemp: number
+    locationName: string
+}
+
+export function SwimAnalysis({ waterTemp, user }: SwimAnalysisProps) {
     const [weather, setWeather] = useState<WeatherData | null>(null)
     const [loading, setLoading] = useState(true)
     const [locationName, setLocationName] = useState("Ubicación actual")
+    const [analysis, setAnalysis] = useState<string | null>(null)
+    const [isRegenerating, setIsRegenerating] = useState(false)
+    const [cooldown, setCooldown] = useState(false)
 
+    // Helper to get local date key (YYYY-MM-DD)
+    const getLocalDateKey = () => {
+        const now = new Date()
+        const offset = now.getTimezoneOffset() * 60000
+        const localDate = new Date(now.getTime() - offset)
+        return localDate.toISOString().split('T')[0]
+    }
+
+    // 1. Fetch Weather on Mount
     useEffect(() => {
         const fetchWeather = async (lat: number, lon: number) => {
-            const data = await getWeatherForecast(lat, lon)
-            setWeather(data)
-            setLoading(false)
+            try {
+                const data = await getWeatherForecast(lat, lon)
+                setWeather(data)
+            } catch (error) {
+                console.error("Error fetching weather:", error)
+            } finally {
+                setLoading(false)
+            }
         }
 
         if ("geolocation" in navigator) {
@@ -38,31 +69,101 @@ export function SwimAnalysis({ waterTemp }: SwimAnalysisProps) {
         }
     }, [])
 
-    const getAnalysis = () => {
-        if (!weather) return "Analizando condiciones..."
-
+    // 2. Logic to Generate Analysis Text
+    const generateAnalysisText = (temp: number, weatherData: WeatherData) => {
         // 1. Check Weather Warnings
-        if (weather.current.weatherCode >= 71) return "❄️ Se espera nieve. Cubre la piscina."
-        if (weather.current.weatherCode >= 51) return "🌧️ Lluvia detectada. No es buen momento."
-        if (weather.daily.minTemp <= 0) return "🥶 Alerta de helada. Protege el sistema."
+        if (weatherData.current.weatherCode >= 71) return "❄️ Se espera nieve. Cubre la piscina."
+        if (weatherData.current.weatherCode >= 51) return "🌧️ Lluvia detectada. No es buen momento."
+        if (weatherData.daily.minTemp <= 0) return "🥶 Alerta de helada. Protege el sistema."
 
         // 2. Check Water Temperature (Psychological Constants)
-        if (waterTemp >= 30) return "🔥 ¡Agua muy caliente! Tipo Jacuzzi."
-        if (waterTemp >= 26) return "🏊 ¡Condiciones perfectas! Disfruta el nado."
-        if (waterTemp >= 22) {
+        if (temp >= 30) return "🔥 ¡Agua muy caliente! Tipo Jacuzzi."
+        if (temp >= 26) return "🏊 ¡Condiciones perfectas! Disfruta el nado."
+        if (temp >= 22) {
             // If water is "Refreshing" but day is hot, suggest waiting
-            if (weather.daily.maxTemp > 28 && weather.current.temperature < 25) {
+            if (weatherData.daily.maxTemp > 28 && weatherData.current.temperature < 25) {
                 return "🌤️ El agua refresca. La tarde estará ideal."
             }
             return "😎 Agua refrescante. Ideal para el calor."
         }
 
         // Water is Cold (< 22)
-        if (weather.daily.maxTemp > 30) return "☀️ Hace calor, pero el agua sigue fría."
+        if (weatherData.daily.maxTemp > 30) return "☀️ Hace calor, pero el agua sigue fría."
         return "🥶 Agua fría. Solo para valientes."
     }
 
-    if (loading) return (
+    // 3. Check Persistence & Generate if Needed
+    useEffect(() => {
+        if (!weather || loading || !user) return
+
+        const checkAndGenerate = async () => {
+            const todayKey = getLocalDateKey()
+            const analysisRef = ref(db, `users/${user.uid}/swim_analysis`)
+
+            try {
+                const snapshot = await get(analysisRef)
+                const savedData = snapshot.val() as SavedAnalysis | null
+
+                if (savedData && savedData.dateKey === todayKey) {
+                    // Use saved analysis
+                    setAnalysis(savedData.content)
+                } else {
+                    // Generate new analysis
+                    const newText = generateAnalysisText(waterTemp, weather)
+                    const newData: SavedAnalysis = {
+                        content: newText,
+                        dateKey: todayKey,
+                        timestamp: Date.now(),
+                        weatherCode: weather.current.weatherCode,
+                        weatherTemp: weather.current.temperature,
+                        locationName: locationName
+                    }
+
+                    await set(analysisRef, newData)
+                    setAnalysis(newText)
+                }
+            } catch (error) {
+                console.error("Error checking/saving analysis:", error)
+                // Fallback to generating without saving if Firebase fails
+                setAnalysis(generateAnalysisText(waterTemp, weather))
+            }
+        }
+
+        checkAndGenerate()
+    }, [weather, loading, user, waterTemp, locationName])
+
+    // 4. Manual Regenerate
+    const handleRegenerate = async () => {
+        if (!weather || cooldown) return
+
+        setIsRegenerating(true)
+        setCooldown(true)
+
+        try {
+            const newText = generateAnalysisText(waterTemp, weather)
+            const todayKey = getLocalDateKey()
+            const newData: SavedAnalysis = {
+                content: newText,
+                dateKey: todayKey,
+                timestamp: Date.now(),
+                weatherCode: weather.current.weatherCode,
+                weatherTemp: weather.current.temperature,
+                locationName: locationName
+            }
+
+            const analysisRef = ref(db, `users/${user.uid}/swim_analysis`)
+            await set(analysisRef, newData)
+            setAnalysis(newText)
+        } catch (error) {
+            console.error("Error regenerating:", error)
+        } finally {
+            setIsRegenerating(false)
+            // 5s Cooldown
+            setTimeout(() => setCooldown(false), 5000)
+        }
+    }
+
+    if (loading || !analysis || !weather) return (
         <Card className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 border-blue-200 dark:border-slate-700">
             <CardContent className="p-6 flex items-center justify-center">
                 <div className="animate-pulse flex items-center gap-2 text-blue-600 dark:text-blue-400">
@@ -72,8 +173,6 @@ export function SwimAnalysis({ waterTemp }: SwimAnalysisProps) {
             </CardContent>
         </Card>
     )
-
-    if (!weather) return null
 
     return (
         <Card className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 border-blue-200 dark:border-slate-700 overflow-hidden relative">
@@ -87,9 +186,21 @@ export function SwimAnalysis({ waterTemp }: SwimAnalysisProps) {
                         <Sparkles className="h-4 w-4" />
                         Análisis de Nado IA
                     </CardTitle>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        {locationName}
+                    <div className="flex items-center gap-2 relative z-10">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            {locationName}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 bg-background/50 backdrop-blur-sm"
+                            onClick={handleRegenerate}
+                            disabled={cooldown || isRegenerating}
+                            title="Regenerar análisis"
+                        >
+                            <RefreshCw className={`h-3.5 w-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
+                        </Button>
                     </div>
                 </div>
             </CardHeader>
@@ -97,7 +208,7 @@ export function SwimAnalysis({ waterTemp }: SwimAnalysisProps) {
             <CardContent>
                 <div className="flex flex-col gap-4">
                     <div className="text-lg font-medium text-slate-800 dark:text-slate-200">
-                        {getAnalysis()}
+                        {analysis}
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-muted-foreground bg-white/50 dark:bg-black/20 p-3 rounded-lg backdrop-blur-sm">
