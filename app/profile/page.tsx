@@ -2,84 +2,121 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
-import { useRouter } from "next/navigation"
-import { db } from "@/firebase"
-import { deleteUser } from "firebase/auth"
-import { ref, onValue, update, remove } from "firebase/database"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { db } from '@/firebase'
+import { ref, onValue, update, remove, get, set } from 'firebase/database'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { User, Phone, MapPin, Save, ArrowLeft, Cpu, Crown, Shield } from "lucide-react"
-import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { toast } from "sonner"
+import { User, Phone, MapPin, Save, ArrowLeft, Cpu, Crown, Shield, Droplets, Zap, Flame, Loader2, Trash2, Archive, AlertTriangle } from "lucide-react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { PoolVolumeCalculator } from "@/components/pool-volume-calculator"
+import { HP_TO_FLOW_RATE } from "@/lib/filtration-calc"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { Switch } from "@/components/ui/switch"
+import { PremiumModal } from "@/components/premium-modal"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function ProfilePage() {
-    const { user, logOut } = useAuth()
+    const { user } = useAuth()
     const router = useRouter()
+    const [loading, setLoading] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-    const [role, setRole] = useState<string>('cliente')
+    const [role, setRole] = useState<string | null>(null)
+    const [showPremiumModal, setShowPremiumModal] = useState(false)
+
+    const [showResetDialog, setShowResetDialog] = useState(false)
+    const [resetConfirmation, setResetConfirmation] = useState("")
+    const [isResetting, setIsResetting] = useState(false)
 
     const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        phone: '',
-        poolLocation: '',
-        macAddress: ''
+        displayName: '',
+        phoneNumber: '',
+        address: '',
+        macAddress: '',
+        poolVolume: '',
+        pumpFlowRate: '',
+        hasHeater: false,
+        heaterPower: ''
     })
 
-    // Redirigir si no hay usuario
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login')
-        }
-    }, [user, loading, router])
+    const handleResetDevice = async (archive: boolean) => {
+        if (!user) return
+        setIsResetting(true)
 
-    // Cargar datos del usuario
-    useEffect(() => {
-        if (user) {
-            const userRef = ref(db, `users/${user.uid}`)
-            const unsubscribe = onValue(userRef, (snapshot) => {
-                const data = snapshot.val()
-                if (data) {
-                    setFormData({
-                        firstName: data.firstName || '',
-                        lastName: data.lastName || '',
-                        phone: data.phone || '',
-                        poolLocation: data.poolLocation || '',
-                        macAddress: data.macAddress || ''
+        try {
+            const historyRef = ref(db, 'sensor_status/historial')
+
+            if (archive) {
+                // Archive Logic for Premium
+                const snapshot = await get(historyRef)
+                if (snapshot.exists()) {
+                    const data = snapshot.val()
+                    const timestamp = Date.now()
+                    await set(ref(db, `users/${user.uid}/archived_history/${timestamp}`), {
+                        data,
+                        archivedAt: timestamp,
+                        note: "Historial archivado antes de restablecer dispositivo"
                     })
-                    if (data.role) {
-                        setRole(data.role)
-                    }
+                    toast.success("Historial archivado correctamente")
                 }
-                setLoading(false)
-            })
+            }
 
-            return () => unsubscribe()
-        } else {
-            setLoading(false)
+            // Delete History
+            await remove(historyRef)
+
+            // Optional: Reset specific user metrics if they exist (e.g. max temp)
+            // await update(ref(db, `users/${user.uid}`), { maxTemp: null })
+
+            toast.success("Dispositivo restablecido correctamente")
+            setShowResetDialog(false)
+            setResetConfirmation("")
+
+            // Force router refresh to update UI if needed
+            router.refresh()
+
+        } catch (error) {
+            console.error("Error resetting device:", error)
+            toast.error("Error al restablecer el dispositivo")
+        } finally {
+            setIsResetting(false)
         }
+    }
+
+    useEffect(() => {
+        if (!user) return
+
+        const userRef = ref(db, `users/${user.uid}`)
+        onValue(userRef, (snapshot) => {
+            const data = snapshot.val()
+            if (data) {
+                setFormData({
+                    displayName: data.displayName || '',
+                    phoneNumber: data.phoneNumber || '',
+                    address: data.address || '',
+                    macAddress: data.macAddress || '',
+                    poolVolume: data.poolVolume || '',
+                    pumpFlowRate: data.pumpFlowRate || '',
+                    hasHeater: data.hasHeater || false,
+                    heaterPower: data.heaterPower || ''
+                })
+                setRole(data.role)
+            }
+        })
     }, [user])
 
-    const toggleEdit = () => {
-        if (isEditing) {
-            setIsEditing(false)
-        } else {
-            setIsEditing(true)
-        }
-    }
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target
-    }
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
         setFormData(prev => ({
             ...prev,
@@ -91,376 +128,531 @@ export default function ProfilePage() {
         e.preventDefault()
         if (!user) return
 
-        setSaving(true)
-        setMessage(null)
-
+        setLoading(true)
         try {
-            const userRef = ref(db, `users/${user.uid}`)
-            await update(userRef, {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                phone: formData.phone,
-                poolLocation: formData.poolLocation,
-                macAddress: formData.macAddress
-            })
-            setMessage({ type: 'success', text: 'Perfil actualizado correctamente' })
+            const updates: any = {
+                displayName: formData.displayName,
+                phoneNumber: formData.phoneNumber,
+                address: formData.address,
+                macAddress: formData.macAddress,
+                poolVolume: formData.poolVolume,
+                pumpFlowRate: formData.pumpFlowRate,
+                hasHeater: formData.hasHeater,
+                heaterPower: formData.heaterPower
+            }
+
+            await update(ref(db, `users/${user.uid}`), updates)
+            toast.success("Perfil actualizado correctamente")
             setIsEditing(false)
         } catch (error) {
-            console.error('Error al actualizar perfil:', error)
-            setMessage({ type: 'error', text: 'Error al actualizar el perfil' })
+            console.error('Error updating profile:', error)
+            toast.error("Error al actualizar el perfil")
         } finally {
-            setSaving(false)
+            setLoading(false)
         }
     }
 
     const handleCancelSubscription = async () => {
         if (!user) return
-
-        if (confirm("¿Estás seguro de que quieres cancelar tu suscripción Premium? Perderás los beneficios inmediatamente.")) {
+        if (confirm("¿Estás seguro que deseas cancelar tu suscripción Premium? Perderás acceso a las funciones avanzadas al final del periodo actual.")) {
             try {
-                const userRef = ref(db, `users/${user.uid}`)
-                await update(userRef, {
-                    role: 'cliente'
+                await update(ref(db, `users/${user.uid}`), {
+                    role: 'cliente_basico'
                 })
                 toast.success("Suscripción cancelada correctamente")
             } catch (error) {
-                console.error("Error cancelling subscription:", error)
+                console.error('Error canceling subscription:', error)
                 toast.error("Error al cancelar la suscripción")
             }
         }
     }
-    const handleDeleteAccount = async () => {
-        if (!user) return
 
-        if (confirm("¿Estás SEGURO de que quieres eliminar tu cuenta? Esta acción NO se puede deshacer y perderás todos tus datos.")) {
-            try {
-                // Check if login is recent (within last 5 minutes)
-                if (user.metadata.lastSignInTime) {
-                    const lastSignIn = new Date(user.metadata.lastSignInTime).getTime()
-                    const now = new Date().getTime()
-                    // 5 minutes in milliseconds
-                    if (now - lastSignIn > 5 * 60 * 1000) {
-                        toast.error("Por seguridad, debes haber iniciado sesión recientemente. Te redirigiremos al login.")
-                        setTimeout(async () => {
-                            await logOut()
-                            router.push('/login')
-                        }, 2000)
-                        return
-                    }
-                }
-
-                // 1. Delete user data from Realtime Database
-                await remove(ref(db, `users/${user.uid}`))
-
-                // 2. Delete user from Firebase Auth
-                await deleteUser(user)
-
-                router.push('/')
-                toast.success("Cuenta eliminada correctamente")
-            } catch (error: any) {
-                console.error("Error deleting account:", error)
-                if (error.code === 'auth/requires-recent-login') {
-                    toast.error("Por seguridad, inicia sesión nuevamente e inténtalo de nuevo.")
-                    await logOut()
-                    router.push('/login')
-                } else {
-                    toast.error("Error al eliminar la cuenta: " + error.message)
-                }
-            }
+    const handleHpSelect = (hp: string) => {
+        const flowRate = HP_TO_FLOW_RATE[hp]
+        if (flowRate) {
+            setFormData(prev => ({
+                ...prev,
+                pumpFlowRate: flowRate.toString()
+            }))
+            toast.info(`Capacidad estimada: ${flowRate} m³/h para ${hp} HP`)
         }
     }
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
+    const handleUseCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            toast.error("Tu navegador no soporta geolocalización")
+            return
+        }
+
+        setLoading(true)
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude, longitude } = position.coords
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                    const data = await response.json()
+
+                    if (data && data.display_name) {
+                        setFormData(prev => ({
+                            ...prev,
+                            address: data.display_name
+                        }))
+                        toast.success("Dirección actualizada")
+                    } else {
+                        toast.error("No se pudo obtener la dirección")
+                    }
+                } catch (error) {
+                    console.error("Error fetching address:", error)
+                    toast.error("Error al obtener la dirección")
+                } finally {
+                    setLoading(false)
+                }
+            },
+            (error) => {
+                console.error("Geolocation error:", error)
+                toast.error("Error al obtener tu ubicación")
+                setLoading(false)
+            }
         )
     }
 
-    const getPlanDetails = () => {
-        if (role === 'admin') {
-            return {
-                name: 'Administrador',
-                icon: <Shield className="w-5 h-5 text-white" />,
-                style: 'bg-gradient-to-r from-red-600 to-red-800 text-white border-red-500',
-                badge: 'ADMIN'
-            }
-        } else if (role === 'cliente_premium') {
-            return {
-                name: 'Plan PRO',
-                icon: <Crown className="w-5 h-5 text-white" />,
-                style: 'bg-gradient-to-r from-amber-400 to-orange-600 text-white border-amber-500',
-                badge: 'PRO'
-            }
-        } else {
-            return {
-                name: 'Plan Gratuito',
-                icon: <User className="w-5 h-5 text-gray-600 dark:text-gray-300" />,
-                style: 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700',
-                badge: 'FREE'
-            }
-        }
-    }
-
-    const plan = getPlanDetails()
-
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             <DashboardHeader title="Mi Perfil" />
 
             <main className="container mx-auto px-4 py-8">
                 <div className="max-w-2xl mx-auto space-y-6">
                     <div className="flex items-center justify-between">
-                        <Link href="/dashboard" className="inline-flex items-center text-sm text-gray-500 hover:text-blue-600 transition-colors">
+                        <Link href="/dashboard" className="inline-flex items-center text-sm text-slate-500 hover:text-blue-600 transition-colors">
                             <ArrowLeft className="w-4 h-4 mr-1" />
                             Volver al Dashboard
                         </Link>
                     </div>
 
-                    {/* Plan Card */}
-                    <Card className={`overflow-hidden border-2 ${role !== 'cliente' ? 'shadow-lg' : ''}`}>
-                        <div className={`p-6 flex items-center justify-between ${plan.style}`}>
-                            <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-full ${role === 'cliente' ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white/20'}`}>
-                                    {plan.icon}
+                    {/* Tarjeta de Suscripción */}
+                    <Card className="border-blue-100 dark:border-blue-900 bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-slate-800/50">
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Crown className={`h-5 w-5 ${role === 'cliente_premium' || role === 'admin' ? 'text-yellow-500' : 'text-slate-400'}`} />
+                                        Estado de la Cuenta
+                                    </CardTitle>
+                                    <CardDescription>
+                                        {role === 'admin' ? 'Administrador del Sistema' :
+                                            role === 'cliente_premium' ? 'Plan Premium Activo' : 'Plan Básico'}
+                                    </CardDescription>
                                 </div>
-                                <div>
-                                    <h3 className="text-lg font-bold">{plan.name}</h3>
-                                    <p className={`text-sm ${role === 'cliente' ? 'text-gray-500 dark:text-gray-400' : 'text-white/80'}`}>
-                                        {role === 'cliente' ? 'Actualiza a PRO para más funciones' : 'Tienes acceso total al sistema'}
-                                    </p>
-                                </div>
+                                {(role === 'cliente_premium' || role === 'admin') && (
+                                    <div className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-500 rounded-full text-xs font-medium border border-yellow-200 dark:border-yellow-800">
+                                        PREMIUM
+                                    </div>
+                                )}
                             </div>
-                            {role === 'cliente' && (
-                                <Button asChild variant="default" size="sm" className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white border-none">
-                                    <Link href="/assistant">
-                                        Obtener Premium
-                                    </Link>
-                                </Button>
-                            )}
-                        </div>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="text-2xl font-bold">
-                                {isEditing ? 'Editar Perfil' : 'Mi Perfil'}
-                            </CardTitle>
-                            {!isEditing && (
-                                <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
-                                    Editar
-                                </Button>
-                            )}
                         </CardHeader>
                         <CardContent>
-                            {message && (
-                                <div className={`p-4 mb-6 rounded-lg text-sm text-center ${message.type === 'success'
-                                    ? 'bg-green-50 text-green-700 border border-green-200'
-                                    : 'bg-red-50 text-red-700 border border-red-200'
-                                    }`}>
-                                    {message.text}
-                                </div>
-                            )}
-
-                            {isEditing ? (
-                                <form onSubmit={handleSubmit} className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {/* Nombre */}
-                                        <div className="space-y-2">
-                                            <Label htmlFor="firstName">Nombre</Label>
-                                            <div className="relative">
-                                                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                                                <Input
-                                                    id="firstName"
-                                                    name="firstName"
-                                                    value={formData.firstName}
-                                                    onChange={handleInputChange}
-                                                    className="pl-10"
-                                                    placeholder="Tu nombre"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Apellido */}
-                                        <div className="space-y-2">
-                                            <Label htmlFor="lastName">Apellido</Label>
-                                            <div className="relative">
-                                                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                                                <Input
-                                                    id="lastName"
-                                                    name="lastName"
-                                                    value={formData.lastName}
-                                                    onChange={handleInputChange}
-                                                    className="pl-10"
-                                                    placeholder="Tu apellido"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Teléfono */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="phone">Teléfono</Label>
-                                        <div className="relative">
-                                            <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                                            <Input
-                                                id="phone"
-                                                name="phone"
-                                                value={formData.phone}
-                                                onChange={handleInputChange}
-                                                className="pl-10"
-                                                placeholder="+56 9 1234 5678"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Ubicación de la piscina */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="poolLocation">Ubicación de la Piscina</Label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                                            <Input
-                                                id="poolLocation"
-                                                name="poolLocation"
-                                                value={formData.poolLocation}
-                                                onChange={handleInputChange}
-                                                className="pl-10"
-                                                placeholder="Ej: Santiago, Chile"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* MAC del Dispositivo */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="macAddress">MAC del Dispositivo</Label>
-                                        <div className="relative">
-                                            <Cpu className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                                            <Input
-                                                id="macAddress"
-                                                name="macAddress"
-                                                value={formData.macAddress}
-                                                onChange={handleInputChange}
-                                                className="pl-10 font-mono"
-                                                placeholder="AA:BB:CC:DD:EE:FF"
-                                            />
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Ingresa la dirección MAC de tu dispositivo AquaGuard para vincularlo.
-                                        </p>
-                                    </div>
-
-                                    <div className="flex gap-3">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="flex-1"
-                                            onClick={() => setIsEditing(false)}
-                                            disabled={saving}
-                                        >
-                                            Cancelar
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            className="flex-1 bg-blue-600 hover:bg-blue-700"
-                                            disabled={saving}
-                                        >
-                                            {saving ? (
-                                                <>
-                                                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                                                    Guardando...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Save className="w-4 h-4 mr-2" />
-                                                    Guardar Cambios
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
-                                </form>
-                            ) : (
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre Completo</h3>
-                                            <div className="mt-1 flex items-center text-lg font-medium">
-                                                <User className="w-5 h-5 mr-2 text-blue-500" />
-                                                {formData.firstName || formData.lastName ? `${formData.firstName} ${formData.lastName}` : <span className="text-gray-400 italic">No especificado</span>}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</h3>
-                                            <div className="mt-1 flex items-center text-lg">
-                                                <Phone className="w-5 h-5 mr-2 text-blue-500" />
-                                                {formData.phone || <span className="text-gray-400 italic">No especificado</span>}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Ubicación de la Piscina</h3>
-                                        <div className="mt-1 flex items-center text-lg">
-                                            <MapPin className="w-5 h-5 mr-2 text-blue-500" />
-                                            {formData.poolLocation || <span className="text-gray-400 italic">No especificada</span>}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Dispositivo Vinculado (MAC)</h3>
-                                        <div className="mt-1 flex items-center text-lg font-mono bg-gray-100 dark:bg-slate-800 px-3 py-2 rounded-md w-fit">
-                                            <Cpu className="w-5 h-5 mr-2 text-blue-500" />
-                                            {formData.macAddress || <span className="text-gray-400 italic font-sans">Ninguno</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Danger Zone */}
-                    <Card className="border-red-200 dark:border-red-900 shadow-sm">
-                        <CardHeader>
-                            <CardTitle className="text-xl font-bold text-red-600 dark:text-red-500">Zona de Peligro</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {role === 'cliente_premium' && (
-                                <div className="flex items-center justify-between p-4 border border-red-100 dark:border-red-900/30 rounded-lg bg-red-50 dark:bg-red-900/10">
-                                    <div>
-                                        <h4 className="font-semibold text-red-700 dark:text-red-400">Cancelar Suscripción Premium</h4>
-                                        <p className="text-sm text-red-600/80 dark:text-red-400/70">
-                                            Perderás acceso a las funciones PRO al final del periodo actual.
-                                        </p>
+                            {role === 'cliente_premium' ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                                        <Shield className="h-4 w-4 text-green-500" />
+                                        <span>Tu suscripción está activa y se renovará automáticamente.</span>
                                     </div>
                                     <Button
                                         variant="outline"
-                                        className="border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/50"
+                                        className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                                         onClick={handleCancelSubscription}
                                     >
                                         Cancelar Suscripción
                                     </Button>
                                 </div>
+                            ) : role !== 'admin' && (
+                                <div className="space-y-4">
+                                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                                        Actualiza a Premium para acceder a análisis históricos, alertas avanzadas y soporte prioritario.
+                                    </p>
+                                    <Button
+                                        onClick={() => setShowPremiumModal(true)}
+                                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all"
+                                    >
+                                        Obtener Premium
+                                    </Button>
+                                </div>
                             )}
+                        </CardContent>
+                    </Card>
 
-                            <div className="flex items-center justify-between p-4 border border-red-100 dark:border-red-900/30 rounded-lg bg-red-50 dark:bg-red-900/10">
-                                <div>
-                                    <h4 className="font-semibold text-red-700 dark:text-red-400">Eliminar Cuenta</h4>
-                                    <p className="text-sm text-red-600/80 dark:text-red-400/70">
-                                        Esta acción es permanente y no se puede deshacer.
+                    <PremiumModal open={showPremiumModal} onOpenChange={setShowPremiumModal} />
+
+                    {/* Formulario de Datos */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle>Información Personal</CardTitle>
+                                {!isEditing ? (
+                                    <Button onClick={() => setIsEditing(true)} variant="outline">
+                                        Editar
+                                    </Button>
+                                ) : (
+                                    <Button onClick={() => setIsEditing(false)} variant="ghost">
+                                        Cancelar
+                                    </Button>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="displayName" className="flex items-center gap-2">
+                                            <User className="h-4 w-4 text-slate-400" />
+                                            Nombre Completo
+                                        </Label>
+                                        <Input
+                                            id="displayName"
+                                            name="displayName"
+                                            value={formData.displayName}
+                                            onChange={handleChange}
+                                            disabled={!isEditing}
+                                            placeholder="Tu nombre"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="phoneNumber" className="flex items-center gap-2">
+                                            <Phone className="h-4 w-4 text-slate-400" />
+                                            Teléfono
+                                        </Label>
+                                        <Input
+                                            id="phoneNumber"
+                                            name="phoneNumber"
+                                            value={formData.phoneNumber}
+                                            onChange={handleChange}
+                                            disabled={!isEditing}
+                                            placeholder="+56 9 ..."
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2 md:col-span-2">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="address" className="flex items-center gap-2">
+                                                <MapPin className="h-4 w-4 text-slate-400" />
+                                                Dirección de la Piscina
+                                            </Label>
+                                            {isEditing && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                    onClick={handleUseCurrentLocation}
+                                                    disabled={loading}
+                                                >
+                                                    {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <MapPin className="h-3 w-3 mr-1" />}
+                                                    Usar ubicación actual
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <Input
+                                            id="address"
+                                            name="address"
+                                            value={formData.address}
+                                            onChange={handleChange}
+                                            disabled={!isEditing}
+                                            placeholder="Calle, Número, Comuna"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2 md:col-span-2">
+                                        <Label htmlFor="macAddress" className="flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-slate-400" />
+                                            ID del Dispositivo (MAC)
+                                        </Label>
+                                        <Input
+                                            id="macAddress"
+                                            name="macAddress"
+                                            value={formData.macAddress}
+                                            onChange={handleChange}
+                                            disabled={!isEditing}
+                                            placeholder="AA:BB:CC:DD:EE:FF"
+                                            className="font-mono"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Este ID vincula tu cuenta con el hardware de monitoreo.
+                                        </p>
+                                    </div>
+
+                                    {/* Pool Volume Section */}
+                                    <div className="space-y-2 md:col-span-2 pt-4 border-t">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="poolVolume" className="flex items-center gap-2">
+                                                <Droplets className="h-4 w-4 text-blue-500" />
+                                                Volumen de la Piscina (Litros)
+                                            </Label>
+                                            {isEditing && (
+                                                <PoolVolumeCalculator
+                                                    onCalculate={(vol) => setFormData(prev => ({ ...prev, poolVolume: vol.toString() }))}
+                                                />
+                                            )}
+                                        </div>
+                                        <Input
+                                            id="poolVolume"
+                                            name="poolVolume"
+                                            type="number"
+                                            value={formData.poolVolume}
+                                            onChange={handleChange}
+                                            disabled={!isEditing}
+                                            placeholder="Ej: 40000"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Necesario para calcular dosis químicas exactas.
+                                        </p>
+                                    </div>
+
+                                    {/* Pump Capacity Section */}
+                                    <div className="space-y-2 md:col-span-2 pt-4 border-t">
+                                        <Label htmlFor="pumpFlowRate" className="flex items-center gap-2">
+                                            <Zap className="h-4 w-4 text-yellow-500" />
+                                            Capacidad de Bomba (m³/h)
+                                        </Label>
+
+                                        {isEditing && (
+                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                <span className="text-xs text-muted-foreground w-full mb-1">¿No sabes el caudal? Selecciona los HP de tu bomba:</span>
+                                                {Object.keys(HP_TO_FLOW_RATE).map((hp) => (
+                                                    <Button
+                                                        key={hp}
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="text-xs h-7"
+                                                        onClick={() => handleHpSelect(hp)}
+                                                    >
+                                                        {hp} HP
+                                                    </Button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <Input
+                                            id="pumpFlowRate"
+                                            name="pumpFlowRate"
+                                            type="number"
+                                            value={formData.pumpFlowRate}
+                                            onChange={handleChange}
+                                            disabled={!isEditing}
+                                            placeholder="Ej: 14"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Usado para optimizar tiempos de filtrado y ahorrar energía.
+                                        </p>
+                                    </div>
+
+                                    {/* Climatización Section */}
+                                    <div className="space-y-2 md:col-span-2 pt-4 border-t">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="hasHeater" className="flex items-center gap-2">
+                                                <Flame className="h-4 w-4 text-orange-500" />
+                                                Sistema de Climatización
+                                            </Label>
+                                            <Switch
+                                                id="hasHeater"
+                                                checked={formData.hasHeater}
+                                                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, hasHeater: checked }))}
+                                                disabled={!isEditing}
+                                            />
+                                        </div>
+                                        {formData.hasHeater && (
+                                            <div className="space-y-2 mt-2 animate-in fade-in slide-in-from-top-2">
+                                                <Label htmlFor="heaterPower" className="flex items-center gap-2">
+                                                    Potencia de Climatización (BTU)
+                                                </Label>
+                                                <Input
+                                                    id="heaterPower"
+                                                    name="heaterPower"
+                                                    type="number"
+                                                    value={formData.heaterPower}
+                                                    onChange={handleChange}
+                                                    disabled={!isEditing || !formData.hasHeater}
+                                                    placeholder="Ej: 50000"
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    Necesario para cálculos de eficiencia energética.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                </div>
+
+                                {isEditing && (
+                                    <div className="flex justify-end pt-4">
+                                        <Button type="submit" disabled={loading} className="gap-2">
+                                            {loading ? (
+                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                            ) : (
+                                                <Save className="h-4 w-4" />
+                                            )}
+                                            Guardar Cambios
+                                        </Button>
+                                    </div>
+                                )}
+                            </form>
+                        </CardContent>
+                    </Card>
+
+                    {/* Resumen de Datos Clave (Solo lectura) */}
+                    {!isEditing && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <Card className="bg-blue-50 dark:bg-blue-900/20 border-none">
+                                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                                    <Droplets className="h-8 w-8 text-blue-500 mb-2" />
+                                    <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                                        {formData.poolVolume ? parseInt(formData.poolVolume).toLocaleString() : '-'} L
+                                    </div>
+                                    <div className="text-xs text-blue-600/80 dark:text-blue-400/80">Volumen Total</div>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-green-50 dark:bg-green-900/20 border-none">
+                                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                                    <Zap className="h-8 w-8 text-green-500 mb-2" />
+                                    <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                                        {formData.pumpFlowRate ? `${formData.pumpFlowRate} m³/h` : '-'}
+                                    </div>
+                                    <div className="text-xs text-green-600/80 dark:text-green-400/80">Capacidad Bomba</div>
+                                </CardContent>
+                            </Card>
+                            {formData.hasHeater && (
+                                <Card className="bg-orange-50 dark:bg-orange-900/20 border-none col-span-2">
+                                    <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                                        <Flame className="h-8 w-8 text-orange-500 mb-2" />
+                                        <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+                                            {formData.heaterPower ? `${parseInt(formData.heaterPower).toLocaleString()} BTU` : '-'}
+                                        </div>
+                                        <div className="text-xs text-orange-600/80 dark:text-orange-400/80">Climatización</div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Danger Zone */}
+                    <Card className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                <AlertTriangle className="h-5 w-5" />
+                                Zona de Peligro
+                            </CardTitle>
+                            <CardDescription>
+                                Acciones destructivas para tu dispositivo y datos.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div className="space-y-1">
+                                    <h4 className="font-medium text-red-700 dark:text-red-300">Restablecer Dispositivo</h4>
+                                    <p className="text-sm text-red-600/80 dark:text-red-400/80 max-w-md">
+                                        Elimina todo el historial de sensores y métricas acumuladas.
+                                        {role === 'cliente_premium' || role === 'admin'
+                                            ? " Puedes archivar tus datos antes de borrar."
+                                            : " Esta acción no se puede deshacer."}
                                     </p>
                                 </div>
                                 <Button
                                     variant="destructive"
-                                    onClick={handleDeleteAccount}
+                                    onClick={() => setShowResetDialog(true)}
+                                    className="shrink-0"
                                 >
-                                    Eliminar Cuenta
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Borrar Historial
                                 </Button>
                             </div>
                         </CardContent>
                     </Card>
+
+                    <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                                    <AlertTriangle className="h-5 w-5" />
+                                    ¿Estás absolutamente seguro?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription asChild>
+                                    <div className="space-y-3 text-sm text-muted-foreground">
+                                        <p>
+                                            Esta acción eliminará permanentemente el historial de lecturas de tu dispositivo.
+                                            Si cambiaste tu dispositivo de piscina, esto es recomendado para reiniciar las gráficas.
+                                        </p>
+
+                                        {(role === 'cliente_premium' || role === 'admin') ? (
+                                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md border border-blue-100 dark:border-blue-800">
+                                                <p className="text-sm text-blue-700 dark:text-blue-300 font-medium flex items-center gap-2">
+                                                    <Crown className="h-4 w-4 text-yellow-500" />
+                                                    Beneficio Premium
+                                                </p>
+                                                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                                    Puedes guardar una copia de tu historial actual antes de borrarlo.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-md border border-red-100 dark:border-red-800">
+                                                <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                                                    Para confirmar, escribe <span className="font-bold select-all">BORRAR</span> abajo:
+                                                </p>
+                                                <Input
+                                                    value={resetConfirmation}
+                                                    onChange={(e) => setResetConfirmation(e.target.value)}
+                                                    className="mt-2 border-red-200 focus-visible:ring-red-500"
+                                                    placeholder="Escribe BORRAR"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                <AlertDialogCancel onClick={() => setResetConfirmation("")}>Cancelar</AlertDialogCancel>
+
+                                {(role === 'cliente_premium' || role === 'admin') ? (
+                                    <>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => handleResetDevice(true)}
+                                            disabled={isResetting}
+                                            className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                                        >
+                                            {isResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4 mr-2" />}
+                                            Archivar y Reiniciar
+                                        </Button>
+                                        <Button
+                                            variant="destructive"
+                                            onClick={() => handleResetDevice(false)}
+                                            disabled={isResetting}
+                                        >
+                                            {isResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                                            Borrar Todo
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <AlertDialogAction
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            if (resetConfirmation === "BORRAR") {
+                                                handleResetDevice(false)
+                                            } else {
+                                                toast.error("Debes escribir BORRAR para confirmar")
+                                            }
+                                        }}
+                                        disabled={resetConfirmation !== "BORRAR" || isResetting}
+                                        className="bg-red-600 hover:bg-red-700"
+                                    >
+                                        {isResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar Borrado"}
+                                    </AlertDialogAction>
+                                )}
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     )
 }
