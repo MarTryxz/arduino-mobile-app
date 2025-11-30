@@ -8,6 +8,7 @@ import { ref, onValue } from 'firebase/database'
 import { DashboardHeader } from "@/components/dashboard-header"
 import { SENSOR_RANGES } from "@/constants/ranges"
 import { useAuth } from "@/contexts/AuthContext"
+import { SwimAnalysis } from "@/components/swim-analysis"
 import dynamic from 'next/dynamic'
 
 const PoolScene = dynamic(() => import("@/components/PoolScene"), {
@@ -37,6 +38,7 @@ export default function DashboardPage() {
 
   const { user } = useAuth()
   const [currentRanges, setCurrentRanges] = useState(SENSOR_RANGES)
+  const [role, setRole] = useState<string | null>(null)
 
   // Fetch user settings and role
   useEffect(() => {
@@ -44,8 +46,9 @@ export default function DashboardPage() {
 
     const roleRef = ref(db, `users/${user.uid}/role`)
     onValue(roleRef, (snapshot) => {
-      const role = snapshot.val()
-      const isPremium = role === 'cliente_premium' || role === 'admin'
+      const userRole = snapshot.val()
+      setRole(userRole)
+      const isPremium = userRole === 'cliente_premium' || userRole === 'admin'
 
       if (isPremium) {
         const settingsRef = ref(db, `users/${user.uid}/alertSettings`)
@@ -162,6 +165,13 @@ export default function DashboardPage() {
               <h2 className="text-lg font-medium text-foreground">Lecturas en tiempo real</h2>
               <p className="text-sm text-muted-foreground">{tiempoTranscurrido()}</p>
             </div>
+
+            {/* Smart Swim Analysis (Premium Only) */}
+            {(role === 'cliente_premium' || role === 'admin') && (
+              <div className="mb-6">
+                <SwimAnalysis waterTemp={lecturas.tempAgua} />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1 flex flex-col gap-4">
