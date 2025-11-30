@@ -8,12 +8,16 @@ import {
   Thermometer,
   Droplet,
   Wind,
-  Activity
+  Activity,
+  Download
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
 import { DashboardHeader } from "@/components/dashboard-header"
+import { PremiumModal } from "@/components/premium-modal"
+import { useAuth } from "@/contexts/AuthContext"
 import { db } from '@/firebase'
 import { ref, onValue, query, limitToLast } from 'firebase/database'
 
@@ -21,6 +25,15 @@ interface HistoryDataPoint {
   date: string
   value: number
   timestamp: number
+}
+
+interface ExportDataPoint {
+  date: string
+  timestamp: number
+  tempAgua?: number
+  tempAire?: number
+  humedadAire?: number
+  ph?: number
 }
 
 export default function HistoryPage() {
@@ -31,8 +44,23 @@ export default function HistoryPage() {
   const [airTempData, setAirTempData] = useState<HistoryDataPoint[]>([])
   const [humidityData, setHumidityData] = useState<HistoryDataPoint[]>([])
   const [phData, setPhData] = useState<HistoryDataPoint[]>([])
+  const [fullHistoryData, setFullHistoryData] = useState<ExportDataPoint[]>([])
 
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+  const [role, setRole] = useState<string | null>(null)
+  const [showPremiumModal, setShowPremiumModal] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+
+    const roleRef = ref(db, `users/${user.uid}/role`)
+    const unsubscribe = onValue(roleRef, (snapshot) => {
+      setRole(snapshot.val())
+    })
+
+    return () => unsubscribe()
+  }, [user])
 
   useEffect(() => {
     const historyRef = ref(db, 'sensor_status/historial')
@@ -46,6 +74,8 @@ export default function HistoryPage() {
         const humidityPoints: HistoryDataPoint[] = []
         const phPoints: HistoryDataPoint[] = []
 
+        const exportPoints: ExportDataPoint[] = []
+
         Object.entries(data).forEach(([key, value]: [string, any]) => {
           // Try to get timestamp from value or key
           let timestamp = value.timestamp || value.time || Date.now(); // Fallback if missing
@@ -56,6 +86,16 @@ export default function HistoryPage() {
           }
 
           const date = new Date(timestamp).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+
+          // Collect data for export
+          const exportPoint: ExportDataPoint = {
+            date,
+            timestamp,
+            tempAgua: value.tempAgua !== undefined ? Number(value.tempAgua) : undefined,
+            tempAire: value.tempAire !== undefined ? Number(value.tempAire) : undefined,
+            humedadAire: value.humedadAire !== undefined ? Number(value.humedadAire) : undefined,
+            ph: undefined
+          }
 
           // Water Temperature
           if (value.tempAgua !== undefined) {
@@ -89,33 +129,87 @@ export default function HistoryPage() {
             // Calculate pH from voltage
             const ph = 7 - (Number(value.phVoltaje) - 2.5) * 3.5
             const phValue = Math.max(0, Math.min(14, ph))
+            const finalPh = Number(phValue.toFixed(1))
 
             phPoints.push({
               date,
-              value: Number(phValue.toFixed(1)),
+              value: finalPh,
               timestamp
             })
+            exportPoint.ph = finalPh
           }
+
+          exportPoints.push(exportPoint)
         })
 
         // Sort by timestamp
-        const sortByTime = (a: HistoryDataPoint, b: HistoryDataPoint) => a.timestamp - b.timestamp
+        const sortByTime = (a: { timestamp: number }, b: { timestamp: number }) => a.timestamp - b.timestamp
 
         waterPoints.sort(sortByTime)
         airPoints.sort(sortByTime)
         humidityPoints.sort(sortByTime)
         phPoints.sort(sortByTime)
+        exportPoints.sort(sortByTime)
 
         setWaterTempData(waterPoints)
         setAirTempData(airPoints)
         setHumidityData(humidityPoints)
         setPhData(phPoints)
+        setFullHistoryData(exportPoints)
       }
       setLoading(false)
     })
 
     return () => unsubscribe()
   }, [selectedPeriod])
+
+  const handleExportCSV = () => {
+    const isPremium = role === 'cliente_premium' || role === 'admin'
+
+    if (!isPremium) {
+      setShowPremiumModal(true)
+      return
+    }
+
+    if (fullHistoryData.length === 0) return
+
+    // Headers
+    const headers = ["Fecha", "Temperatura Agua (°C)", "Temperatura Aire (°C)", "Humedad (%)", "pH"]
+
+    // Rows
+    const rows = fullHistoryData.map(point => {
+      const dateObj = new Date(point.timestamp)
+      // Format: YYYY-MM-DD HH:mm:ss
+      const formattedDate = dateObj.getFullYear() + "-" +
+        String(dateObj.getMonth() + 1).padStart(2, '0') + "-" +
+        String(dateObj.getDate()).padStart(2, '0') + " " +
+        String(dateObj.getHours()).padStart(2, '0') + ":" +
+        String(dateObj.getMinutes()).padStart(2, '0') + ":" +
+        String(dateObj.getSeconds()).padStart(2, '0')
+
+      return [
+        formattedDate,
+        point.tempAgua !== undefined ? point.tempAgua : "",
+        point.tempAire !== undefined ? point.tempAire : "",
+        point.humedadAire !== undefined ? point.humedadAire : "",
+        point.ph !== undefined ? point.ph : ""
+      ].join(",")
+    })
+
+    // Combine with BOM for Excel compatibility
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n")
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", `historial_sensores_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   // Helper to render chart
   const renderChart = (data: HistoryDataPoint[], unit: string, colorFrom: string, colorTo: string, minVal: number, maxVal: number, title: string) => {
@@ -200,81 +294,102 @@ export default function HistoryPage() {
               <SelectItem value="30d">30 días</SelectItem>
             </SelectContent>
           </Select>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-2 gap-2 hidden sm:flex"
+            onClick={handleExportCSV}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="ml-2 sm:hidden"
+            onClick={handleExportCSV}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-app-blue/10 h-auto">
-              <TabsTrigger value="water-temp" className="data-[state=active]:bg-app-blue data-[state=active]:text-white py-2">
-                <Droplet className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Temp. Agua</span>
-                <span className="sm:hidden">Agua</span>
-              </TabsTrigger>
-              <TabsTrigger value="air-temp" className="data-[state=active]:bg-app-blue data-[state=active]:text-white py-2">
-                <Thermometer className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Temp. Aire</span>
-                <span className="sm:hidden">Aire</span>
-              </TabsTrigger>
-              <TabsTrigger value="humidity" className="data-[state=active]:bg-app-blue data-[state=active]:text-white py-2">
-                <Wind className="h-4 w-4 mr-2" />
-                Humedad
-              </TabsTrigger>
-              <TabsTrigger value="ph" className="data-[state=active]:bg-app-blue data-[state=active]:text-white py-2">
-                <Activity className="h-4 w-4 mr-2" />
-                pH
-              </TabsTrigger>
-            </TabsList>
+        {
+          loading ? (
+            <div className="flex justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-app-blue/10 h-auto">
+                <TabsTrigger value="water-temp" className="data-[state=active]:bg-app-blue data-[state=active]:text-white py-2">
+                  <Droplet className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Temp. Agua</span>
+                  <span className="sm:hidden">Agua</span>
+                </TabsTrigger>
+                <TabsTrigger value="air-temp" className="data-[state=active]:bg-app-blue data-[state=active]:text-white py-2">
+                  <Thermometer className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Temp. Aire</span>
+                  <span className="sm:hidden">Aire</span>
+                </TabsTrigger>
+                <TabsTrigger value="humidity" className="data-[state=active]:bg-app-blue data-[state=active]:text-white py-2">
+                  <Wind className="h-4 w-4 mr-2" />
+                  Humedad
+                </TabsTrigger>
+                <TabsTrigger value="ph" className="data-[state=active]:bg-app-blue data-[state=active]:text-white py-2">
+                  <Activity className="h-4 w-4 mr-2" />
+                  pH
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="water-temp" className="mt-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium">Temperatura del Agua (°C)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {renderChart(waterTempData, "°C", "from-blue-500", "to-cyan-400", 10, 40, "Temperatura del Agua")}
-                </CardContent>
-              </Card>
-            </TabsContent>
+              <TabsContent value="water-temp" className="mt-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Temperatura del Agua (°C)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {renderChart(waterTempData, "°C", "from-blue-500", "to-cyan-400", 10, 40, "Temperatura del Agua")}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            <TabsContent value="air-temp" className="mt-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium">Temperatura del Aire (°C)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {renderChart(airTempData, "°C", "from-orange-500", "to-amber-300", 0, 40, "Temperatura del Aire")}
-                </CardContent>
-              </Card>
-            </TabsContent>
+              <TabsContent value="air-temp" className="mt-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Temperatura del Aire (°C)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {renderChart(airTempData, "°C", "from-orange-500", "to-amber-300", 0, 40, "Temperatura del Aire")}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            <TabsContent value="humidity" className="mt-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium">Humedad del Aire (%)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {renderChart(humidityData, "%", "from-cyan-500", "to-blue-300", 0, 100, "Humedad")}
-                </CardContent>
-              </Card>
-            </TabsContent>
+              <TabsContent value="humidity" className="mt-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Humedad del Aire (%)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {renderChart(humidityData, "%", "from-cyan-500", "to-blue-300", 0, 100, "Humedad")}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            <TabsContent value="ph" className="mt-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium">Nivel de pH</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {renderChart(phData, "", "from-green-500", "to-emerald-300", 0, 14, "pH")}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        )}
-      </main>
-    </div>
+              <TabsContent value="ph" className="mt-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Nivel de pH</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {renderChart(phData, "", "from-green-500", "to-emerald-300", 0, 14, "pH")}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )
+        }
+      </main >
+      <PremiumModal open={showPremiumModal} onOpenChange={setShowPremiumModal} />
+    </div >
   )
 }

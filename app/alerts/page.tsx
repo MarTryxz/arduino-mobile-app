@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AlertTriangle, Thermometer, Wifi, Battery, Bell, Droplet, Wind, Activity } from "lucide-react"
+import { AlertTriangle, Thermometer, Wifi, Battery, Bell, Droplet, Wind, Activity, Settings } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { DashboardHeader } from "@/components/dashboard-header"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { db } from '@/firebase'
 import { ref, onValue, query, orderByChild, limitToLast } from 'firebase/database'
 
@@ -70,9 +72,17 @@ export default function AlertsPage() {
       <DashboardHeader title="Alertas" />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-medium text-foreground">Alertas recientes</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-medium text-foreground">Alertas recientes</h2>
+          </div>
+          <Link href="/alerts/settings">
+            <Button variant="outline" size="sm" className="gap-2">
+              <Settings className="h-4 w-4" />
+              Configuración
+            </Button>
+          </Link>
         </div>
 
         {loading ? (
