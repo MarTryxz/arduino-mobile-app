@@ -88,7 +88,7 @@ export function ShareDashboardModal() {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 hidden md:flex">
+                <Button variant="outline" size="sm" className="gap-2 hidden md:flex text-foreground">
                     <Share2 className="h-4 w-4" />
                     Compartir
                 </Button>
